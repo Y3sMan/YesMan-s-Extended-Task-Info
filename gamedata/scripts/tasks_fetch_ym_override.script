@@ -1,0 +1,155 @@
+
+local function dbg_print(msg,...)
+    if not ym_debug then return end
+
+    ym_debug.set_modname("FETCH_REWARD_AND_REMOVE")
+    ym_debug.dbg_print(tostring(msg),...)
+end
+
+
+--#region vanilla fetch_reward_and_remove function with dbg log slipped in 
+xr_effects.fetch_reward_and_remove = function(actor, npc, p) --	Remove fetch items and give money reward:
+--	Description:  Removes fetch task items and gives actor money reward based on item value
+--	Usage: fetch_reward_and_remove( p[1]:p[2] )
+--	Parameters:
+--		p[1] (type: string) Var name given to fetch task items
+--		p[2] (type: float) Multiplier for cost of items to apply to reward value (optional; default = 1.0)
+--	Return value (type: none): none, removes fetch items and gives actor reward
+	
+	-- Get fetch items
+	local sec = load_var( db.actor, p[1] )
+	if not (sec) then return end
+    dbg_print("sec = " .. tostring(sec))
+	
+	local sim = alife()
+	
+	-- Extract artefact if its in container
+	if string.find(sec,"af_") and (not db.actor:object(sec)) then
+		local break_con
+		local break_arty
+		local id_combo
+		local search_cont = { "lead_box" , "af_aam", "af_aac", "af_iam" }
+		for i=1,#search_cont do
+			if db.actor:object(sec .. "_" .. search_cont[i]) then
+				break_arty = sec
+				break_con = search_cont[i]
+				id_combo = db.actor:object(sec .. "_" .. search_cont[i]):id()
+				break
+			end
+		end
+
+		if id_combo and break_con and break_arty and ini_sys:section_exist(break_con) then
+			printdbg("/ Artefact container found, artefact [%s] - contairer [%s]", break_arty, break_con)
+			alife_create_item(break_arty, db.actor)
+			alife_create_item(break_con, db.actor)
+			alife_release_id(id_combo)
+			
+			-- play effect
+			level.add_cam_effector('camera_effects\\item_use.anm', 8053, false,'')
+			xr_effects.play_inv_aac_open()
+		end
+	end
+	
+	local function timer() -- delay for 1 sec, to register alife changes
+		
+		-- Gather task items and cost
+		local count = load_var( db.actor, (p[1] .. "_count") ) or 1
+		local mult = tonumber(p[2]) or 1
+		local max_use = IsItem("multiuse",sec) or 1
+		local cost = ini_sys:r_float_ex(sec,"cost") * (1 / max_use)
+		
+		local last_obj
+		local collected_itms = {}
+		local total_cost, remain = 0,0
+		local cur_count = count
+		local use_con = (max_use == 1) and (not IsItem("device",sec)) and (not IsItem("battery", sec)) and true or false
+
+        dbg_print("count = " .. tostring( count ))
+        dbg_print("mult = " .. tostring( mult ))
+        dbg_print("max_use = " .. tostring( max_use ))
+        dbg_print("cost = " .. tostring( cost ))
+
+		local function itr(temp, obj)
+			if (obj:section() == sec) then
+				local cnt = (max_use > 1) and obj:get_remaining_uses() or 1
+				local con = use_con and obj:condition() or 1
+				
+				collected_itms[obj:id()] = cnt
+				total_cost = total_cost + (cost * cnt * (con * con) * mult)
+                dbg_print("ITR")
+                dbg_print("con = " .. tostring(con))
+                dbg_print("cnt = " .. tostring(cnt))
+                dbg_print("total_cost = " .. tostring(total_cost))
+				cur_count = cur_count - cnt
+				
+				last_obj = obj
+			end
+			if (cur_count <= 0) then
+				if (cur_count < 0) then
+					remain = math.abs(cur_count)
+				end
+				return true
+			end
+			--return false
+		end
+		db.actor:iterate_inventory(itr, nil)
+		
+		-- Check availability
+		if is_empty(collected_itms) then
+			printe("! ERROR: fetch_reward_and_remove | no fetch item found!")
+			return true
+		end
+		if (total_cost < 50) then 
+			total_cost = 50
+			printf("~ Warning: fetch_reward_and_remove | total_cost is below 50")
+		end
+	
+		-- Reward value for artefacts depends on progression difficulty
+		if IsArtefact(last_obj) then
+            dbg_print("total cost before eco and factor = " .. tostring(total_cost))
+			local eco = game_difficulties.get_eco_factor("type") or 0.5
+            dbg_print("eco = " .. tostring(eco))
+			local factor = (eco == 3 and 0.4) or (eco == 2 and 0.5) or 0.6
+            dbg_print("factor = " .. tostring(factor))
+			total_cost = total_cost * factor
+		end
+		--
+		
+        dbg_print("total cost = " .. total_cost)
+		local delta =  math.floor(total_cost * 0.1)
+		local min_reward = (total_cost - delta)
+		local max_reward = (total_cost + delta)
+		
+        local eco_multi = game_difficulties.get_eco_factor("rewards") or 1
+        dbg_print("min_reward = " .. min_reward*eco_multi)
+        dbg_print("max_reward = " .. max_reward*eco_multi)
+		xr_effects.reward_random_money( actor, npc, { min_reward , max_reward } )
+	
+		-- Give task items to npc
+		local trade_npc = false --get_speaker()
+		for k,v in pairs(collected_itms) do
+			if trade_npc then
+				local obj = level.object_by_id(k)
+				if obj then
+					db.actor:transfer_item(obj, trade_npc)
+				end
+			else
+				alife_release_id(k)
+			end
+		end
+		if (remain > 0) and IsItem("multiuse",sec) then
+			alife_create_item(sec, db.actor, {uses = remain})
+			local last_obj_uses = last_obj:get_remaining_uses()
+			if last_obj_uses and (last_obj_uses > remain) then
+				local uses = (last_obj_uses - remain)
+				alife_process_item(last_obj:section(), last_obj:id(), {uses = uses})
+			end
+		end
+		
+		news_manager.relocate_item(db.actor, "out", sec, count)
+	
+		return true
+	end
+		
+	CreateTimeEvent(0,"delay_reward", 1, timer)
+end

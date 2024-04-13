@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+	<string id="st_ym_return_for_reward" >
+		<text> Return to %s for your reward.</text>
+	</string>
+	<string id="st_ym_reward_approx_100">
+		<text> At 100%, for all the parts, I'd pay at least %s. </text>
+	</string>
+	<string id="st_ym_reward_1unit">
+		<text> For all of them, I'd pay at least %s. </text>
+	</string>
+	<string id="ym_ui_caption_reward">
+		<text>Reward:</text>
+	</string>
+	<string id="ym_ui_reward_min">
+        <!-- <text>%$clr_txtYou have %$clr_numberx$count %$clr_txtin your inventory</text> -->
+		<text>%$ylw_textMin: %$clr_number$min</text>
+	</string>
+	<string id="ym_ui_reward_max">
+		<text>%$grn_textMax: %$clr_number$max</text>
+	</string>
+</string_table>

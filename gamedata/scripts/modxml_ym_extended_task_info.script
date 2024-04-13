@@ -1,0 +1,29 @@
+local function dbg_print(msg) 
+    if not ym_debug then return end
+
+    ym_debug.set_modname("YM_PART_TASKS: XML")
+    ym_debug.dbg_print(msg)
+end
+
+function on_xml_read()
+    RegisterScriptCallback("on_xml_read", function(xml_file_name, xml_obj)
+        -- XML file i want to change
+        local xml_to_change = [[text\eng\st_quests_general.xml]]
+        local my_xml = [[text\eng\st_ym_taskgiver_name_in_descr.xml]]
+
+        -- Check if its the file i want to change
+        -- printf("-----------------------READING XML-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+        if xml_file_name == xml_to_change then
+            -- Here is my code to change XML
+        -- printf("-----------------------READING QUESTS GENERAL -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+            if xml_file_name:find(my_xml) then
+                xml_obj:insertFromXMLFile(my_xml)
+            else
+                dbg_print("Could not find " .. tostring(my_xml))
+            end
+        end
+    end)
+end
+
+--![dialogs]
+-->files                                   = ym_wpn_prt_quests
