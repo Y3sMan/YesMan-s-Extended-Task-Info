@@ -269,6 +269,10 @@ local function get_static_money_arg(task_id)
     --     --     local m,n = string.find(ss, "%:%d*")
     -- end
 
+    local eco_multi = get_eco_multi() or 1
+    dbg_print("eco_multi = " .. tostring(eco_multi))
+    if min_reward then min_reward = min_reward * eco_multi end
+
     return min_reward, max_reward or 0,0
 end
 
