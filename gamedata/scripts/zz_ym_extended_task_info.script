@@ -17,6 +17,11 @@ end
 -- #region helper functions
 local parse_keys = utils_data.parse_string_keys
 local gc = game.translate_string
+if z_taskboard_overrides then
+    dbg_print("PDA TASKBOARD override loaded")
+    local pda_taskboard_create_overrides = z_taskboard_overrides.create_overrides
+    pda_taskboard_create_overrides()
+end
 
 
 local function is_pda_taskboard_active()
