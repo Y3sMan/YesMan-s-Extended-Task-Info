@@ -32,6 +32,8 @@ end
 function concat_caption_with_text(caption, text)
     -- Concatenate caption and text if caption isn't empty, otherwise just return text
     -- Added newlines for better formatting
+
+    if not text then return  caption end
     return (caption ~= "" and "\\n \\n" .. caption .. "\\n" .. text) or "\\n \\n" .. text
 end
 
