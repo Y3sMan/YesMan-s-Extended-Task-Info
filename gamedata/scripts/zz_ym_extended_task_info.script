@@ -4,6 +4,7 @@ local function dbg_print(msg,...)
 
     ym_debug.set_modname("YM_EXTENDED_TASK_INFO")
     ym_debug.dbg_print(msg,...)
+		--exec_console_cmd("flush")
 end
 
 local function dbg_dump(o)
@@ -508,11 +509,13 @@ local function get_fetch_reward(task_id)
     local cost = section and ini_sys:r_float_ex(section, "cost") or 1
     -- if (not cost) then return 0, 0 end
 
+    dbg_print("use_con = " .. tostring(use_con))
     if cost then
         cost = cost and tonumber(cost)
         if max_use then dbg_print("max_use = " .. tostring(max_use)) end
         cost = cost and max_use and cost * (1 / max_use) or 0
         dbg_print("base cost = " .. tostring(cost))
+        dbg_print("amount = " .. tostring(amount))
 
 
         if (is_i_arti(section) or is_i_mutant_attach(section)) then
@@ -529,7 +532,7 @@ local function get_fetch_reward(task_id)
         -- if cnt then dbg_print("cnt = " .. tostring( cnt )) end
 
         -- if not (cost and (cost > 0)) then return 0, 0 end
-        dbg_print("base cost * eco_multi = " .. tostring(cost * eco_multi))
+        dbg_print("base cost before multi and amount = " .. tostring(cost))
         cost = amount and cost and multi and cost * amount * multi or 0
         -- cost = count and cost and cost * count
         dbg_print("total cost after count and multi = " .. tostring(cost))
@@ -795,6 +798,11 @@ end
 -- REWARDS IN DIALOG
 --#region
 
+-- TODO: Add reward message to message history
+-- ? TODO: Handle dynamic tasks from imporant npcs
+-- ! PDA Taskboard messages very garbled
+-- ? my fault?
+--* Looks like just the Messages portion is messed up?
 
 local function generic_postpone(task_id)
     local min,max = calc_reward_money(task_id)
@@ -1326,7 +1334,10 @@ function tasks_assault.setup_assault_task(actor, npc, p)
 end
 --#endregion
 
--- TODO: Test BOUNTY
+--// TODO: Test BOUNTY
+
+-- TODO: bug fixes
+--! - pda gets talk message thingie
 --#region BOUNTY
 local org_bounty_setup = tasks_bounty.setup_bounty_task
 function tasks_bounty.setup_bounty_task(actor, npc, p)
@@ -1340,6 +1351,7 @@ end
 
 --#endregion
 
+-- TODO: Do dominance tasks
 -- TODO: Test DOMINANCE
 --#region DOMINANCE
 local org_dominance_setup = tasks_dominance.setup_dominance_task
