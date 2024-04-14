@@ -1467,23 +1467,28 @@ function xr_effects.on_init_delivery_task(actor,npc,p)
 		RemoveTimeEvent(0,"on_init_delivery_task") 
 	end
 
+
+    -- local min_reward, max_reward = calc_reward_money(task_id)
+    -- dbg_print("min_reward = " .. tostring(min_reward))
+    -- dbg_print("max_reward = " .. tostring(max_reward))
 	
 	-- local news_caption = game.translate_string(task_manager.task_ini:r_string_ex(p[1], "title")) or "error"
-	local news_caption = reward_caption or "error"
-	local news_text = format_reward_string(min_reward, max_reward)
+	-- local news_caption = reward_caption or "error"
+	-- local news_text = format_reward_string(min_reward, max_reward)
 	
-	if is_pda_taskboard_active() then
-		cache_task_text(task_id, "", news_text)
-		return
-	end
+	-- if is_pda_taskboard_active() then
+	-- 	cache_task_text(task_id, "", news_text)
+	-- 	return
+	-- end
 	
 
 
     -- Second timed event
-	CreateTimeEvent(2,"on_init_delivery_task",0,function()
-		db.actor:give_talk_message2(news_caption, news_text, reward_icon, "iconed_answer_item")
-		return true
-	end)
+	-- CreateTimeEvent(2,"on_init_delivery_task",0,function()
+	-- 	db.actor:give_talk_message2(news_caption, news_text, reward_icon, "iconed_answer_item")
+	-- 	return true
+	-- end)
+	CreateTimeEvent(2,"on_init_delivery_task",0,generic_postpone,task_id)
 end
 
 -- local org_general_deliver_desc = task_functor.general_deliver_desc
