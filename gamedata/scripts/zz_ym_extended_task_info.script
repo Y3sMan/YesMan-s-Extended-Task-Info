@@ -812,6 +812,12 @@ local function generic_postpone(task_id)
     local news_text = format_reward_string(min,max)
     local news_icon = reward_icon
 
+    if is_pda_taskboard_active() then
+		cache_task_text(task_id, news_caption, news_text)
+        return true
+    end
+
+
     db.actor:give_talk_message2(news_caption, news_text, news_icon, "iconed_answer_item")
     return true
 end
@@ -1332,6 +1338,10 @@ function tasks_assault.setup_assault_task(actor, npc, p)
 
     org_assault_setup(actor, npc, p)
 
+    if not is_pda_taskboard_active then 
+		RemoveTimeEvent(0,"setup_assault_task") 
+    end
+
     CreateTimeEvent(2,"setup_assault_task",0,generic_postpone,task_id)
 end
 --#endregion
@@ -1347,6 +1357,14 @@ function tasks_bounty.setup_bounty_task(actor, npc, p)
 
     local task_id = p[1]
     if not task_id then return end
+
+	if not is_pda_taskboard_active() then
+		-- Removes default time event, which prevents printing of default quest info
+		RemoveTimeEvent(0,"setup_bounty_task") 
+	end
+
+	-- if is_pda_taskboard_active() then return end
+
     
 	CreateTimeEvent(2,"setup_bounty_task",0,generic_postpone,task_id)
 end
@@ -1371,12 +1389,23 @@ function tasks_recover_item_on_corpse.on_descr(a,b,c)
     dbg_print("RIOC")
     org_recover_item_on_corpse_setup(a,b,c)
 
+    local task_id = c[1]
+    if not task_id then return end
+
 	local function postpone_for_next_frame(x)
         dbg_print("x = " ..tostring(x))
 
         local news_caption = reward_caption
 		local news_icon = reward_icon
 		local news_text = format_reward_string(5000, 7500)
+
+
+        if  is_pda_taskboard_active then 
+            cache_task_text( news_caption, news_text)
+            return true
+        end
+
+        
 		db.actor:give_talk_message2(news_caption, news_text, news_icon, "iconed_answer_item")
 		return true
 	end
@@ -1431,11 +1460,13 @@ function xr_effects.on_init_delivery_task(actor,npc,p)
     -- local target_id = get_target_id(task_id)
 	-- local obj = alife_object(target_id)
     -- if not obj then return end
-
     if not task_id then return end
-    local min_reward, max_reward = calc_reward_money(task_id)
-    dbg_print("min_reward = " .. tostring(min_reward))
-    dbg_print("max_reward = " .. tostring(max_reward))
+
+	if not is_pda_taskboard_active() then
+		-- Removes default time event, which prevents printing of default quest info
+		RemoveTimeEvent(0,"on_init_delivery_task") 
+	end
+
 	
 	-- local news_caption = game.translate_string(task_manager.task_ini:r_string_ex(p[1], "title")) or "error"
 	local news_caption = reward_caption or "error"
