@@ -20,7 +20,10 @@ local gc = game.translate_string
 if z_taskboard_overrides then
     dbg_print("PDA TASKBOARD override loaded")
     local pda_taskboard_create_overrides = z_taskboard_overrides.create_overrides
-    pda_taskboard_create_overrides()
+    -- pda_taskboard_create_overrides()
+    -- function on_game_start()
+    --     RegisterScriptCallback("on_game_load", pda_taskboard_create_overrides)
+    -- end
 end
 
 
@@ -215,7 +218,7 @@ local function get_random_money_by_dist_arg(task_id)
 
     -- local s = tostring(dbg_dump(condlist))
     -- local i,j
-    local min_arg, max_arg, arg_multi = 0, 0, 1
+    local min_arg, max_arg, arg_multi = 0, 0, 0.2
 
     local visited = {}
     local rewardArgs = {}
@@ -257,19 +260,42 @@ local function get_random_money_by_dist_arg(task_id)
 	local lvl_task = var and var.lvl_task or level.name()
 	local lvl_target = var and var.lvl_target
 	local n = lvl_task and lvl_target and txr_routes.get_shortest_path_num(lvl_task, lvl_target) or 1
+    dbg_print("n = " .. tostring(n))
 
     local multi = get_eco_multi() or 1
+	dbg_print("eco_multi " .. tostring(multi))
 	local min_val = ( (tonumber(min_arg) or 500) * multi ) / 50
+	dbg_print("min_val " .. tostring(min_val))
 	local max_val = ( (tonumber(max_arg) or (min_val + 1000)) * multi ) / 50
+	dbg_print("max_val " .. tostring(max_val))
 	local money = math.random( math.ceil(min_val), math.ceil(max_val) ) * 50
-	local sweets = math.ceil(n * money * tonumber(arg_multi or 0.2))
 
+    local sweet = function(money)
+        return  math.ceil(n * money * tonumber(arg_multi or 0.2))
+    end
+
+	local sweets = sweet(money)
+
+    local min_reward = min_val * 50
+    local max_reward = max_val * 50
+
+    local min_sweet = sweet(min_reward)
+    local max_sweet = sweet(max_reward)
+
+    dbg_print("min_sweet = " .. tostring(min_sweet))
+    dbg_print("max_sweet = " .. tostring(max_sweet))
+
+    min_reward = min_reward + min_sweet
+    max_reward = max_reward + max_sweet 
+    
+    dbg_print("min_reward = " .. tostring(min_reward))
+    dbg_print("max_reward = " .. tostring(max_reward))
 
     dbg_print("money = " .. tostring(money))
     dbg_print("sweets = " .. tostring(sweets))
     dbg_print("money + sweets = " .. tostring(money + sweets))
 
-    return (money + sweets), 0
+    return  min_reward, max_reward
 end
 
 local function get_fetch_reward_and_remove_multiplier(task_id)
@@ -736,6 +762,7 @@ xr_effects.drx_sl_create_quest_stash = function( actor, npc, p )
 		return
 	end
 
+    if not org_stash_setup then return end
     org_stash_setup(actor, npc, p)
 
     local task_id = p[1]
@@ -746,6 +773,8 @@ end
 --#endregion
 
 -- TODO: Test DELIVERY
+--// ! BUG: reward estimate is off by some varying factor, most likely the distance (sweets) factor
+--* Reward estimate was off because of the random number generator. We had to switch to outputting a min and max instead
 --#region DELIVERY tasks
 local function get_target_id(task_id)
 	local var = load_var(db.actor, task_id)
