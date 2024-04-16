@@ -661,7 +661,7 @@ end
 
 
 --// TODO: finish the rest of the types of dynamic tasks
--- TODO: Test RESCUE
+--// TODO: Test RESCUE
 --#region RESCUE AGENT
 local org_rescue_setup = tasks_agent_rescue.setup_spy_task
 function tasks_agent_rescue.setup_spy_task(actor,npc, p)
@@ -684,6 +684,7 @@ function tasks_assault.setup_assault_task(actor, npc, p)
 	if not (p and p[1]) then
 		return false
 	end
+    dbg_print("SETUP_ASSAULT_TASK init")
 
 	local task_id = p[1]
 
@@ -723,7 +724,7 @@ end
 --#endregion
 
 -- TODO: Do dominance tasks
--- TODO: Test DOMINANCE
+--// TODO: Test DOMINANCE
 --#region DOMINANCE
 local org_dominance_setup = tasks_dominance.setup_dominance_task
 
@@ -782,7 +783,7 @@ end
 
 --#endregion
 
--- TODO: Test DELIVERY
+--// TODO: Test DELIVERY
 --// ! BUG: reward estimate is off by some varying factor, most likely the distance (sweets) factor
 --* Reward estimate was off because of the random number generator. We had to switch to outputting a min and max instead
 --#region DELIVERY tasks
