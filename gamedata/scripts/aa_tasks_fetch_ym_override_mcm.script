@@ -1,12 +1,4 @@
 
-local function dbg_print(msg,...)
-    if not ym_debug then return end
-
-    -- ym_debug.set_modname("FETCH_REWARD_AND_REMOVE")
-	ym_debug.set_modname("REWARD_RANDOM_MONEY_BY_DIST")
-    ym_debug.dbg_print(tostring(msg),...)
-end
-
 
 --#region vanilla fetch_reward_and_remove function with dbg log slipped in 
 -- xr_effects.fetch_reward_and_remove = function(actor, npc, p) --	Remove fetch items and give money reward:
@@ -189,3 +181,31 @@ end
 	
 -- 	dialogs.relocate_money( db.actor, (money + sweets), "in" )
 -- end
+
+
+local function dbg_print(msg,...)
+    if not ym_debug then return end
+
+    -- ym_debug.set_modname("FETCH_REWARD_AND_REMOVE")
+	ym_debug.set_modname("CGeneralTask")
+    ym_debug.dbg_print(tostring(msg),...)
+end
+
+
+
+-- function task_objects.CGeneralTask.__init(self,id)
+
+-- local org_CGeneralTask_init = task_objects.CGeneralTask.__init
+-- class "ym_CGeneralTask" (task_objects.CGeneralTask)
+-- -- function task_objects.CGeneralTask.__init(self, id)
+-- function ym_CGeneralTask:__init( id)
+-- 	super(self, id)
+-- 	dbg_print("CGeneralTask Override")
+-- 	-- org_CGeneralTask_init(self, id)
+
+-- 	local task_ini 		= task_manager.task_ini
+-- 	self.min_reward = task_ini:r_string_to_condlist(id,"min_reward")
+-- 	self.max_reward = task_ini:r_string_to_condlist(id,"max_reward")
+-- end
+
+-- task_manager.CGeneralTask = ym_CGeneralTask
