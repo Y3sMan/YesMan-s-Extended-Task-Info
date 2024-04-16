@@ -448,6 +448,11 @@ end
 
 
 local function calc_reward_money(task_id)
+
+	-- local var = load_var(db.actor, task_id)
+    -- if var and var.min_reward and var.max_reward then return var.min_reward, var.max_reward end
+
+
     local on_comp = get_on_comp_condlist(task_id)
     local s = tostring(dbg_dump(on_comp))
     local min, max = 0, 0
@@ -458,6 +463,11 @@ local function calc_reward_money(task_id)
             min, max = f(task_id)
             if min then dbg_print("min = " .. tostring(min)) end
             if max then dbg_print("max = " .. tostring(max)) end
+            
+            -- var.min_reward = min 
+            -- var.max_reward = max 
+            -- save_var(db.actor, task_id, var)
+
             return min, max 
         end
     end
