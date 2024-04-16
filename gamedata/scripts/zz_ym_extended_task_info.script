@@ -423,6 +423,8 @@ local supported_tasks_funcs = {
     [ "reward_money," ] =  get_static_money_arg
 }
 
+
+
 local function is_supported_task(task_id)
     -- if not task_id then return false end
     printf("\n")
@@ -446,6 +448,17 @@ local function is_supported_task(task_id)
     return false
 end
 
+function ym_get_supported_task_funcs()
+    return supported_tasks_funcs
+end
+
+function ym_add_supported_task_func(func_name, func)
+    supported_tasks_funcs[func_name] = func
+end
+
+function ym_remove_supported_task_func(func_name)
+    supported_tasks_funcs[func_name] = nil
+end
 
 local function calc_reward_money(task_id)
 
