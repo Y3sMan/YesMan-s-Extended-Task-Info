@@ -7,11 +7,11 @@ local function dbg_print(msg,...)
 		--exec_console_cmd("flush")
 end
 
-local function dbg_dump(o)
-    if not ym_debug then return end
+-- local function dbg_dump(o)
+--     if not ym_debug then return "" end
 
-    return ym_debug.dbg_dump(o)
-end
+--     return ym_debug.dbg_dump(o)
+-- end
 --#endregion
 
 -- #region helper functions
@@ -24,6 +24,19 @@ if z_taskboard_overrides then
     -- function on_game_start()
     --     RegisterScriptCallback("on_game_load", pda_taskboard_create_overrides)
     -- end
+end
+
+local function table_dump(o)
+   if type(o) == 'table' then
+      local s = '{ '
+      for k,v in pairs(o) do
+         if type(k) ~= 'number' then k = '"'..k..'"' end
+         s = s .. '['..k..'] = ' .. table_dump(v) .. ','
+      end
+      return s .. '} '
+   else
+      return tostring(o)
+   end
 end
 
 
@@ -75,13 +88,14 @@ local function get_on_comp_condlist(task_id)
         -- local on_comp = task_manager.task_ini:r_string_to_condlist(task_id, "on_complete")
 
         --     local on_comp =  task_id and task_manager.task_ini:r_string_to_condlist(task_id, "on_complete")
-        dbg_print("on_comp = " .. tostring(dbg_dump(on_comp)))
+        if not on_comp then return end
+        dbg_print("on_comp = " .. tostring(table_dump(on_comp)))
         return on_comp
     end
 end
 
 local function get_random_money_arg(task_id)
-    printf("\n")
+    
     dbg_print("get_random_money_arg")
     local condlist = get_on_comp_condlist(task_id)
 
@@ -144,12 +158,12 @@ local function get_random_money_arg(task_id)
 end
 
 local function get_static_money_arg(task_id)
-    printf("\n")
+    
     dbg_print("get_static_money_arg")
     local condlist = get_on_comp_condlist(task_id)
 
 
-    local s = tostring(dbg_dump(condlist))
+    local s = tostring(table_dump(condlist))
     -- local i,j
     local min_reward, max_reward = 0,0
 
@@ -171,7 +185,7 @@ local function get_static_money_arg(task_id)
             else
                 if string.find(tostring(v), "reward_money") then
                     dbg_print("found reward_money at key = " .. tostring(k))
-                    dbg_print("reward_money table = " .. tostring(dbg_dump(tbl[k+2])))
+                    dbg_print("reward_money table = " .. tostring(table_dump(tbl[k+2])))
                     min_reward = tbl[k+2][1]
                     dbg_print("min arg = " .. tostring(min_reward))
                     breakFlag = true
@@ -193,7 +207,7 @@ end
 
 
 local function get_random_money_by_dist_arg(task_id)
-    printf("\n")
+    
     dbg_print("get_random_money_by_dist_arg")
     local condlist = get_on_comp_condlist(task_id)
 
@@ -220,7 +234,7 @@ local function get_random_money_by_dist_arg(task_id)
             else
                 if string.find(tostring(v), "reward_random_money_by_dist") then
                     dbg_print("found reward_random_money_by_dist at key = " .. tostring(k))
-                    dbg_print("reward_random_money_by_dist table = " .. tostring(dbg_dump(tbl[k+2])))
+                    dbg_print("reward_random_money_by_dist table = " .. tostring(table_dump(tbl[k+2])))
                     min_arg = tbl[k+2][2]
                     max_arg = tbl[k+2][3]
                     arg_multi = tbl[k+2][4]
@@ -302,7 +316,7 @@ local function get_fetch_reward_and_remove_multiplier(task_id)
             else
                 if string.find(tostring(v), "fetch_reward_and_remove") then
                     dbg_print("found fetch_reward_and_remove at key = " .. tostring(k))
-                    dbg_print("fetch_reward_and_remove table = " .. tostring(dbg_dump(tbl[k + 2])))
+                    dbg_print("fetch_reward_and_remove table = " .. tostring(table_dump(tbl[k + 2])))
 
                     -- example
                     -- fetch_reward_and_remove(simulation_task_53_fetch:0.9)
@@ -446,11 +460,11 @@ add_func("new_awesome_reward_function", estimate_reward_for_new_awesome_reward_f
 
 local function is_supported_task(task_id)
     -- if not task_id then return false end
-    printf("\n")
+    
     dbg_print("is_supported_task", true)
 
     local on_comp = get_on_comp_condlist(task_id)
-    local s = tostring( dbg_dump(on_comp) )
+    local s = tostring( table_dump(on_comp) )
 
     for key,func in pairs(supported_tasks_funcs) do
         local min,max  = nil, nil
@@ -486,7 +500,7 @@ local function calc_reward_money(task_id)
 
 
     local on_comp = get_on_comp_condlist(task_id)
-    local s = tostring(dbg_dump(on_comp))
+    local s = tostring(table_dump(on_comp))
     local min, max = 0, 0
 
     for key,f in pairs(supported_tasks_funcs) do 
@@ -597,7 +611,7 @@ end
 -- key = task_id, value = news_text
 
 if z_taskboard_overrides then
-    dbg_print("PDA TASKBOARD override loaded")
+    dbg_print("PDA TASKBOARD override loaded", true)
     local tskbrd = z_taskboard_overrides
     -- local pda_taskboard_create_overrides = tskbrd.create_overrides
     
@@ -638,9 +652,15 @@ end
 
 -- TODO: Add reward message to message history
 -- ? TODO: Handle dynamic tasks from imporant npcs
--- ! PDA Taskboard messages very garbled
--- ? my fault?
---* Looks like just the Messages portion is messed up?
+-- * Taskboard handles it mostly fine
+--// ! PDA Taskboard messages very garbled
+--//  ? my fault?
+--// * Looks like just the Messages portion is messed up?
+
+-- TODO: patches for artifact fetch task fails
+-- Gives double "you have x in inventory messages"
+
+-- TODO: fails completely if ym_debug not loaded
 
 local function generic_postpone(task_id)
     local min,max = calc_reward_money(task_id)
@@ -865,7 +885,7 @@ function tasks_measure.setup_measure_task(actor, npc, p)
     local task_id = p[1]
     local function postpone(task_id)
         if (is_pda_taskboard_active()) or (not is_supported_task(task_id)) then
-            dbg_print("Not a supported task")
+            -- dbg_print("Not a supported task")
             return true
         end
 
