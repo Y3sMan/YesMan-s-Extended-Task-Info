@@ -447,7 +447,7 @@ add_func("new_awesome_reward_function", estimate_reward_for_new_awesome_reward_f
 local function is_supported_task(task_id)
     -- if not task_id then return false end
     printf("\n")
-    dbg_print("is_supported_task")
+    dbg_print("is_supported_task", true)
 
     local on_comp = get_on_comp_condlist(task_id)
     local s = tostring( dbg_dump(on_comp) )
@@ -718,10 +718,10 @@ end
 --#region ASSAULT   
 local org_assault_setup = tasks_assault.setup_assault_task
 function tasks_assault.setup_assault_task(actor, npc, p)
+    dbg_print("SETUP_ASSAULT_TASK init", true)
 	if not (p and p[1]) then
 		return false
 	end
-    dbg_print("SETUP_ASSAULT_TASK init")
 
 	local task_id = p[1]
 
@@ -773,7 +773,7 @@ local org_dominance_setup = tasks_dominance.setup_dominance_task
 local org_recover_item_on_corpse_setup = tasks_recover_item_on_corpse.on_descr
 
 function tasks_recover_item_on_corpse.on_descr(a,b,c)
-    dbg_print("RIOC")
+    dbg_print("RIOC", true)
     org_recover_item_on_corpse_setup(a,b,c)
 
     local task_id = c[1]
@@ -831,7 +831,7 @@ end
 
 local original_on_init_delivery_task = xr_effects.on_init_delivery_task
 function xr_effects.on_init_delivery_task(actor,npc,p)
-    dbg_print("ON_INIT_DELIVERY_TASK")
+    dbg_print("ON_INIT_DELIVERY_TASK", true)
 	original_on_init_delivery_task(actor,npc,p)
 	
 	-- if not is_pda_taskboard_active() then
@@ -889,8 +889,8 @@ end
 if ui_pda_taskboard_tab then
     local org_get_fetch_task_descr = ui_pda_taskboard_tab.get_long_task_description
     function ui_pda_taskboard_tab.get_long_task_description(task_data)
-        printf("\n")
-        dbg_print("get_long_task_description")
+        
+        dbg_print("get_long_task_description", true)
         local task_id = task_data.task_id
         if not task_id then return org_get_fetch_task_descr(task_data) end
         -- dbg_print("string.gsplit(600:800) = " .. dbg_dump( str_explode("600:800", ":") ))
