@@ -496,8 +496,6 @@ local function calc_reward_money(task_id)
             if min then dbg_print("min = " .. tostring(min)) end
             if max then dbg_print("max = " .. tostring(max)) end
             
-            cached_tasks_info[task_id][ "min_reward" ] = min or 0
-            cached_tasks_info[task_id][ "max_reward" ] = max or 0
             
             -- var.min_reward = min 
             -- var.max_reward = max 
