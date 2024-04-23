@@ -64,6 +64,7 @@ local function get_eco_multi()
 	return game_difficulties.get_eco_factor("rewards") or 1
 end
 
+-- dumps a task's on_complete condition list and convert it to a single string
 local function get_on_comp_condlist(task_id)
     if not task_id then return end
     dbg_print("get_on_comp_condlist")
@@ -84,8 +85,8 @@ local function get_random_money_arg(task_id)
     local condlist = get_on_comp_condlist(task_id)
 
 
-    local s = tostring(dbg_dump(condlist))
-    local i,j
+    -- local s = tostring(dbg_dump(condlist))
+    -- local i,j
     local min_reward, max_reward = 0,0
 
     if cached_tasks_info and cached_tasks_info[task_id].min_reward and cached_tasks_info[task_id].max_reward then
@@ -95,7 +96,7 @@ local function get_random_money_arg(task_id)
     end 
 
     local visited = {}
-    local rewardArgs = {}
+    -- local rewardArgs = {}
     local breakFlag = false
     local function deepprint(tbl)
         for k, v in pairs(tbl) do
@@ -111,12 +112,12 @@ local function get_random_money_arg(task_id)
                 deepprint(v)
             else
                 if string.find(tostring(v), "reward_random_money") then
-                    dbg_print("found reward_random_money at key = " .. tostring(k))
-                    dbg_print("reward_random_money table = " .. tostring(dbg_dump(tbl[k+2])))
+                    -- dbg_print("found reward_random_money at key = " .. tostring(k))
+                    -- dbg_print("reward_random_money table = " .. tostring(dbg_dump(tbl[k+2])))
                     min_reward = tbl[k+2][1]
                     max_reward = tbl[k+2][2]
-                    dbg_print("min arg = " .. tostring(min_reward))
-                    dbg_print("max arg = " .. tostring(max_reward))
+                    -- dbg_print("min arg = " .. tostring(min_reward))
+                    -- dbg_print("max arg = " .. tostring(max_reward))
                     breakFlag = true
                     break
                 end
@@ -138,7 +139,7 @@ local function get_static_money_arg(task_id)
     local condlist = get_on_comp_condlist(task_id)
 
 
-    local s = tostring(dbg_dump(condlist))
+    -- local s = tostring(dbg_dump(condlist))
     -- local i,j
     local min_reward, max_reward = 0,0
 
@@ -178,25 +179,6 @@ local function get_static_money_arg(task_id)
     end
 
     deepprint(condlist)
-
-    -- i,j = string.find(s, "%d*%:%d*") 
-    -- if (i and j) then
-    --     dbg_print("i = " .. tostring(i))
-    --     dbg_print("j = " .. tostring(j))
-    --     local ss = string.sub(s, i, j)
-    --     local ss_table = str_explode(ss, ":")
-    --     dbg_print("ss = " .. tostring(ss))
-    --     if ss_table then
-    --         min_reward = tonumber( ss_table[1] ) or 0
-    --         max_reward = tonumber( ss_table[2] ) or 0
-    --         dbg_print("min_reward = " .. tostring(min_reward))
-    --         dbg_print("max_reward = " .. tostring(max_reward))
-    --     end
-    --     -- local k,l = string.find(ss, "%d*%:")
-    --     -- if (k and l) then
-    --     --     -- local sss = string.sub(ss, k, l)
-    --     --     local m,n = string.find(ss, "%:%d*")
-    -- end
 
     local eco_multi = get_eco_multi() or 1
     dbg_print("eco_multi = " .. tostring(eco_multi))
@@ -426,7 +408,7 @@ local function get_fetch_reward(task_id)
     dbg_print("min_reward * eco_multi = " .. min_reward * eco_multi)
     dbg_print("max_reward * eco_multi = " .. max_reward * eco_multi)
 
-    local min_cost = round_reward(min_reward, eco_multi)
+    min_cost = round_reward(min_reward, eco_multi)
     max_cost = round_reward(max_reward, eco_multi)
     dbg_print("final min cost calc = " .. min_cost)
 
@@ -437,6 +419,10 @@ local function get_fetch_reward(task_id)
 end
 
 
+-- PLEASE BE AWARE OF THE COMMAS at the end of these strings
+-- The mod string searches through a table-version of the on_complete line of the task
+-- The commas narrow down results so similar function names don't trigger in redudant spots
+-- or in false-positive instances
 local supported_tasks_funcs = {
     [ "fetch_reward_and_remove," ] = get_fetch_reward,
     [ "reward_random_money," ] = get_random_money_arg,
@@ -444,7 +430,40 @@ local supported_tasks_funcs = {
     [ "reward_money," ] =  get_static_money_arg
 }
 
+--#region
+--[==[
+=============================================================================================
 
+-- Custom compatibility like this:
+local remove_supported_func = zz_ym_extended_task_info.ym_remove_supported_task_func
+
+ym_remove_supported_task_func("fetch_reward_and_remove,")
+ym_add_supported_task_func("reward_random_money,")
+
+local supported_task_funcs = {}
+supported_tasks_funcs = ym_get_supported_task_funcs
+
+
+=============================================================================================
+
+-tm_new_task.ltx
+on_complete = %=new_awesome_reward_function(arg1:arg2:arg3)%
+
+-new_task.script
+local add_func = zz_ym_extended_task_info.ym_add_supported_task_func
+
+-- the function needs to return a tuple, even if one of the options is 0
+local function estimate_reward_for_new_awesome_reward_function(task_id)
+    ...
+    return 0,0 
+end
+
+add_func("new_awesome_reward_function", estimate_reward_for_new_awesome_reward_function)
+
+
+=============================================================================================
+--]==]
+--#endregion
 
 local function is_supported_task(task_id)
     -- if not task_id then return false end
@@ -507,12 +526,18 @@ local function calc_reward_money(task_id)
             
             cached_tasks_info[task_id][ "min_reward" ] = min or 0
             cached_tasks_info[task_id][ "max_reward" ] = max or 0
-            
+
             -- var.min_reward = min 
             -- var.max_reward = max 
             -- save_var(db.actor, task_id, var)
+            if (min and max) then
+                return min, max 
+            elseif (not max and min) then
+                return min, 0
+            elseif (not min and max ) then
+                return 0, max
+            end
 
-            return min, max 
         end
     end
 
@@ -600,8 +625,29 @@ end
 --]]
 
 -- key = task_id, value = news_text
-cached_tasks_text = {}
 
+if z_taskboard_overrides then
+    dbg_print("PDA TASKBOARD override loaded")
+    local tskbrd = z_taskboard_overrides
+    -- local pda_taskboard_create_overrides = tskbrd.create_overrides
+    
+    -- imported from z_taskboard_overrides
+    -- local original_give_talk_message2 = db.actor.give_talk_message2
+    -- db.actor.give_talk_message2 = function (...)
+    --     if ActorMenu.get_pda_menu():IsShown() then
+    --         local _, task_title, task_details, task_icon = ...
+    --         table.insert(tskbrd.tasks_info, {
+    --             task_title = task_title,
+    --             task_details = task_details,
+    --             task_icon = task_icon
+    --         })
+    --     else
+    --         original_give_talk_message2(...)
+    --     end
+
+    -- end
+
+end
 
 
 if ui_pda_taskboard_tab and ui_pda_taskboard_tab.clear_cached_data then
@@ -615,29 +661,6 @@ if ui_pda_taskboard_tab and ui_pda_taskboard_tab.clear_cached_data then
 end
 
 --#endregion
---#endregion
-
--- TASKGIVER name in description upon completing the task
---#region
--- local org_general_fetch_task = task_functor.general_fetch_task
--- task_functor.general_fetch_task = function(task_id, field, p, tsk)
---     -- PDA description
---     if (field == "descr") and (tsk.stage == 1) then
---         local giver_npc_id = tsk.task_giver_id
---         -- local npc = db.storage[giver_npc_id] and db.storage[giver_npc_id].object
---         local npc = giver_npc_id and alife_object(giver_npc_id)
---         local npc_name = "the Stalker"
---         if npc then
---             npc_name = npc:character_name()
---         end
-
---         local fText = game.translate_string("st_ym_return_for_reward")
---         return string.format(fText, npc_name or "") or ""
---     else
---         return org_general_fetch_task(task_id, field, p, tsk)
---     end
--- end
-
 --#endregion
 
 -- REWARDS IN DIALOG
@@ -744,8 +767,6 @@ end
 
 --// TODO: Test BOUNTY
 
--- TODO: bug fixes
---! - pda gets talk message thingie
 --#region BOUNTY
 local org_bounty_setup = tasks_bounty.setup_bounty_task
 function tasks_bounty.setup_bounty_task(actor, npc, p)
@@ -830,13 +851,13 @@ end
 --// TODO: Test DELIVERY
 --// ! BUG: reward estimate is off by some varying factor, most likely the distance (sweets) factor
 --* Reward estimate was off because of the random number generator. We had to switch to outputting a min and max instead
---#region DELIVERY tasks
-local function get_target_id(task_id)
-	local var = load_var(db.actor, task_id)
-	if var and var.target_id then
-		return var.target_id
-	end
-end
+-- #region DELIVERY tasks
+-- local function get_target_id(task_id)
+-- 	local var = load_var(db.actor, task_id)
+-- 	if var and var.target_id then
+-- 		return var.target_id
+-- 	end
+-- end
 
 local original_on_init_delivery_task = xr_effects.on_init_delivery_task
 function xr_effects.on_init_delivery_task(actor,npc,p)
@@ -858,7 +879,7 @@ function xr_effects.on_init_delivery_task(actor,npc,p)
 	CreateTimeEvent(2,"on_init_delivery_task",0,generic_postpone,task_id)
 end
 
---#endregion
+-- #endregion
 
 -- TODO: Test MEASURE
 --#region MEASURE tasks
@@ -893,26 +914,6 @@ end
 --#endregion
 
 --#region PDA TASKBOARD COMPATIBILITY
--- local org_get_fetch_task_descr = axr_task_manager.get_fetch_task_description
-
--- function axr_task_manager.get_fetch_task_description(task_id)
---     local sec = load_var(db.actor, task_id .. "_fetch", "")
---     if not is_fetchreward_task(task_id) then return org_get_fetch_task_descr(task_id) end
-
---     local count = sec and load_var(db.actor, task_id .. "_fetch_count") or 1
---     local min, max = calc_rewards(task_id, sec, count)
--- end
-
-
--- function ui_pda_taskboard_tab.get_long_task_description(task_data)
---     dbg_print("running get_long_task_description")
---     local task_id = task_data.task_id
---     if not is_fetchreward_task(task_id) then return org_get_fetch_task_descr(task_data) end
---     local sec = load_var(db.actor, task_id .. "_fetch", "")
---     local count = sec and load_var(db.actor, task_id .. "_fetch_count") or 1
-
---     return org_get_fetch_task_descr(task_data) .. "\\n" .. "test"
--- end
 
 -- PDA TASKBOARD function
 if ui_pda_taskboard_tab then
@@ -1027,128 +1028,6 @@ if ui_pda_taskboard_tab then
     end
 end
 
-
-
--- function axr_task_manager.get_fetch_task_description(task_id)
---     if not task_id then return end
---     dbg_print("\n")
-
---     local cfgcache = axr_task_manager.CFG_CACHE
---     local t = game.translate_string(cfgcache[task_id].fetch_descr)
---     local result = cfgcache[task_id] and cfgcache[task_id].fetch_descr and t
-
---     if result then dbg_print("result = " .. tostring(result)) end
-
-
--- ----#region Parsing condlist for fetch_reward_and_remove multiplier
---     -- local on_comp = cfgcache[task_id].on_complete or task_manager.task_ini:r_string_to_condlist(task_id, "on_complete")
---     -- local eco_multi = game_difficulties.get_eco_factor("rewards") or 1
---     -- local multi
---     -- if on_comp then
---     --     dbg_print("on_comp = " .. tostring(dbg_dump(on_comp)))
---     --     local s = tostring(dbg_dump(on_comp))
---     --     -- local i, j = string.find(s, "fetch_reward_and_remove%([%a+_%a+]+%d+_+%a+%:%d*%.%d*")
-
---     --     -- Filter down to "simulation" tasks that utilize the fetch_reward_and_remove func in their on_complete condlist
---     --     if ((string.find(s, "simulation")) and (string.find(s, "fetch_reward_and_remove"))) then
---     --         local i, j = string.find(s, "%d*%.%d*")
---     --         if (i and j) then
---     --             dbg_print("substring mult = " .. string.sub(s, i, j))
---     --             multi = tonumber(string.sub(s, i, j))
---     --         end
---     --     end
-
---     --     -- multi = on_comp[1][3][1][3][2]
---     --     if (not multi) then multi = 1 end
-
---     --     -- attempt type casting to number
---     --     if (type((tonumber(multi))) == "number") then
---     --         dbg_print("mult = " .. multi)
---     --         multi = tonumber(multi)
---     --         -- conditional for ym_wpn_prts_tasks
---     --     elseif ((multi) and (type(multi) == "string") and (string.find(multi, "ym")) and (string.find(multi, "reward_mult"))) then
---     --         dbg_print("YM reward mult variable = " .. tostring(multi))
---     --         -- multi = tonumber(reward_mults[multi])
---     --     end
---     -- end
-
-
---     -- local actor = db.actor
---     local sec_name = db.actor and ui_item.get_sec_name(load_var(db.actor, task_id .. "_fetch", ""))
---     -- local sec =  load_var(db.actor, task_id )
---     local sec = load_var(db.actor, task_id .. "_fetch", "")
---     local count = sec and load_var(db.actor, task_id .. "_fetch_count") or 1
---     dbg_print("item = " .. tostring(sec_name))
---     dbg_print("count = " .. tostring(count))
---     if sec then dbg_print("type(sec) = " .. tostring(type(sec))) end
---     -- if sec_name then dbg_print("type(sec_name) = " .. tostring(type(sec_name))) end
-
-
---     -- local item = sec_name and actor:object(sec_name)
---     -- if item then dbg_print("type(item) = " .. tostring(type(item))) end
-
---     --
---     if sec then dbg_print("kind = " .. tostring(get_sec_kind(sec))) end
---     -- if (is_i_part(sec)) then
---     --     dbg_print(game.translate_string("st_ym_reward_approx_100"))
---     -- end
-
-
-
---     -- Reward calculation
---     local max_use = IsItem("multiuse", sec) or 1
---     local use_con = (max_use == 1) and (not IsItem("device", sec)) and (not IsItem("battery", sec)) and true or false
---     -- local cnt = (max_use > 1) and sec and sec:get_remaining_uses() or 1
---     local cost = ini_sys:r_float_ex(sec, "cost")
---     cost = cost and tonumber(cost)
---     if max_use then dbg_print("max_use = " .. tostring(max_use)) end
---     cost = cost and max_use and cost * (1 / max_use)
---     -- local single_cost = cost and cost * (1 / max_use)
---     -- local single_cost = cost and count and cost * (1 / count)
-
---     -- if cnt then dbg_print("cnt = " .. tostring( cnt )) end
-
---     if cost then
---         dbg_print("base cost = " .. tostring(cost))
---         dbg_print("base cost * eco_multi = " .. tostring(cost * eco_multi))
---         cost = count and cost and multi and cost * count * multi
---         -- cost = count and cost and cost * count
---         dbg_print("total cost after count and multi = " .. tostring(cost))
---         dbg_print("total cost * eco_multi= " .. tostring(cost * eco_multi))
---     end
---     -- if single_cost then dbg_print("single_cost = " .. tostring( single_cost )) end
-
---     local var = load_var(db.actor, task_id)
---     if (var and var.reward_money) then dbg_print("reward money = " .. tostring(var.reward_money)) end
-
-
---     if result then
---         local delta = math.floor(cost * 0.1)
---         local min_reward = (cost - delta)
---         local max_reward = (cost + delta)
---         dbg_print("min_reward = " .. min_reward)
---         dbg_print("max_reward = " .. max_reward)
---         -- printf("\n")
---         dbg_print("min_reward * eco_multi = " .. min_reward * eco_multi)
---         dbg_print("max_reward * eco_multi = " .. max_reward * eco_multi)
-
---         cost = min_reward and eco_multi and (math.ceil((min_reward * eco_multi) / 50) * 50)
---         dbg_print("final cost calc = " .. cost)
-
---         local reward_s = ""
---         if is_i_part(sec) then
---             reward_s = game.translate_string("st_ym_reward_approx_100") or ""
---         else
---             reward_s = game.translate_string("st_ym_reward_1unit") or ""
---         end
-
---         return (result .. " " .. strformat(reward_s, tostring(cost) or "")) or org_get_fetch_task_descr(task_id)
-
---         -- return result .. " REWARD"
---     end
---     return org_get_fetch_task_descr(task_id)
--- end
--- #endregion
 
 --#endregion
 
