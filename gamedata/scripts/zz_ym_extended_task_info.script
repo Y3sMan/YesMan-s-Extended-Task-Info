@@ -15,16 +15,17 @@ end
 --#endregion
 
 -- #region helper functions
-local cached_tasks_info = {}
 local parse_keys = utils_data.parse_string_keys
 local gc = game.translate_string
-
-local cached_tasks_text 
-if z_extended_task_info and z_extended_task_info.cached_tasks_text then
-    cached_tasks_text = z_extended_task_info.cached_tasks_text
-else
-    cached_tasks_text = {}
+if z_taskboard_overrides then
+    dbg_print("PDA TASKBOARD override loaded")
+    local pda_taskboard_create_overrides = z_taskboard_overrides.create_overrides
+    -- pda_taskboard_create_overrides()
+    -- function on_game_start()
+    --     RegisterScriptCallback("on_game_load", pda_taskboard_create_overrides)
+    -- end
 end
+
 
 local function is_pda_taskboard_active()
     if ui_pda_taskboard_tab and ActorMenu.get_pda_menu():IsShown() then return true end
@@ -69,12 +70,12 @@ local function get_on_comp_condlist(task_id)
     if not task_id then return end
     dbg_print("get_on_comp_condlist")
     local cfgcache = axr_task_manager.CFG_CACHE
-    if cached_tasks_info[task_id] and cached_tasks_info[task_id].on_comp then return cached_tasks_info[task_id].on_comp end
     if cfgcache then
         local on_comp = cfgcache and task_id and cfgcache[task_id] and cfgcache[task_id].on_complete or task_manager.task_ini:r_string_to_condlist(task_id, "on_complete")
-        -- dbg_print("on_comp = " .. tostring(dbg_dump(on_comp)))
-        cached_tasks_info[task_id] = { ["on_comp"] = on_comp }
+        -- local on_comp = task_manager.task_ini:r_string_to_condlist(task_id, "on_complete")
 
+        --     local on_comp =  task_id and task_manager.task_ini:r_string_to_condlist(task_id, "on_complete")
+        dbg_print("on_comp = " .. tostring(dbg_dump(on_comp)))
         return on_comp
     end
 end
@@ -88,12 +89,6 @@ local function get_random_money_arg(task_id)
     -- local s = tostring(dbg_dump(condlist))
     -- local i,j
     local min_reward, max_reward = 0,0
-
-    if cached_tasks_info and cached_tasks_info[task_id].min_reward and cached_tasks_info[task_id].max_reward then
-        min_reward = cached_tasks_info[task_id].min_reward
-        max_reward = cached_tasks_info[task_id].max_reward
-        return min_reward, max_reward
-    end 
 
     local visited = {}
     -- local rewardArgs = {}
@@ -126,9 +121,24 @@ local function get_random_money_arg(task_id)
         end
     end
         deepprint(condlist)
-
-    cached_tasks_info[task_id][ "min_reward" ] = min_reward
-    cached_tasks_info[task_id][ "max_reward" ] = max_reward
+    -- i,j = string.find(s, "%d*%:%d*") 
+    -- if (i and j) then
+    --     dbg_print("i = " .. tostring(i))
+    --     dbg_print("j = " .. tostring(j))
+    --     local ss = string.sub(s, i, j)
+    --     local ss_table = str_explode(ss, ":")
+    --     dbg_print("ss = " .. tostring(ss))
+    --     if ss_table then
+    --         min_reward = tonumber( ss_table[1] ) or 0
+    --         max_reward = tonumber( ss_table[2] ) or 0
+    --         dbg_print("min_reward = " .. tostring(min_reward))
+    --         dbg_print("max_reward = " .. tostring(max_reward))
+    --     end
+    --     -- local k,l = string.find(ss, "%d*%:")
+    --     -- if (k and l) then
+    --     --     -- local sss = string.sub(ss, k, l)
+    --     --     local m,n = string.find(ss, "%:%d*")
+    -- end
 
     return min_reward, max_reward 
 end
@@ -139,15 +149,9 @@ local function get_static_money_arg(task_id)
     local condlist = get_on_comp_condlist(task_id)
 
 
-    -- local s = tostring(dbg_dump(condlist))
+    local s = tostring(dbg_dump(condlist))
     -- local i,j
     local min_reward, max_reward = 0,0
-
-    if cached_tasks_info[task_id] and cached_tasks_info[task_id].min_reward and cached_tasks_info[task_id].max_reward then
-        min_reward = cached_tasks_info[task_id].min_reward
-        max_reward = cached_tasks_info[task_id].max_reward
-        return min_reward, max_reward
-    end 
 
     local visited = {}
     local rewardArgs = {}
@@ -184,9 +188,6 @@ local function get_static_money_arg(task_id)
     dbg_print("eco_multi = " .. tostring(eco_multi))
     if min_reward then min_reward = min_reward * eco_multi end
 
-    cached_tasks_info[task_id][ "min_reward" ] = min_reward
-    cached_tasks_info[task_id][ "max_reward" ] = max_reward
-
     return min_reward, max_reward or 0,0
 end
 
@@ -200,14 +201,6 @@ local function get_random_money_by_dist_arg(task_id)
     -- local s = tostring(dbg_dump(condlist))
     -- local i,j
     local min_arg, max_arg, arg_multi = 0, 0, 0.2
-    local min_reward, max_reward = 0,0
-
-    if cached_tasks_info and cached_tasks_info[task_id].min_reward and cached_tasks_info[task_id].max_reward then
-        min_reward = cached_tasks_info[task_id].min_reward
-        max_reward = cached_tasks_info[task_id].max_reward
-        return min_reward, max_reward
-    end 
-
 
     local visited = {}
     local rewardArgs = {}
@@ -265,8 +258,8 @@ local function get_random_money_by_dist_arg(task_id)
 
 	local sweets = sweet(money)
 
-    min_reward = min_val * 50
-    max_reward = max_val * 50
+    local min_reward = min_val * 50
+    local max_reward = max_val * 50
 
     local min_sweet = sweet(min_reward)
     local max_sweet = sweet(max_reward)
@@ -276,9 +269,6 @@ local function get_random_money_by_dist_arg(task_id)
 
     min_reward = min_reward + min_sweet
     max_reward = max_reward + max_sweet 
-
-    cached_tasks_info[task_id][ "min_reward" ] = min_reward
-    cached_tasks_info[task_id][ "max_reward" ] = max_reward
     
     dbg_print("min_reward = " .. tostring(min_reward))
     dbg_print("max_reward = " .. tostring(max_reward))
@@ -349,14 +339,6 @@ local function get_fetch_reward(task_id)
     local section = load_var(db.actor, task_id .. "_fetch", "")
     local amount = load_var(db.actor, task_id .. "_fetch_count") or 1
 
-    local min_cost, max_cost = 0, 0
-
-    if cached_tasks_info and cached_tasks_info[task_id].min_reward and cached_tasks_info[task_id].max_reward then
-        min_cost = cached_tasks_info[task_id].min_reward
-        max_cost = cached_tasks_info[task_id].max_reward
-        return min_cost, max_cost
-    end 
-
     if not (task_id and section and amount) then return end
 
     dbg_print("get_fetch_reward task_id = " .. tostring(task_id))
@@ -408,12 +390,9 @@ local function get_fetch_reward(task_id)
     dbg_print("min_reward * eco_multi = " .. min_reward * eco_multi)
     dbg_print("max_reward * eco_multi = " .. max_reward * eco_multi)
 
-    min_cost = round_reward(min_reward, eco_multi)
+    local min_cost = round_reward(min_reward, eco_multi)
     max_cost = round_reward(max_reward, eco_multi)
     dbg_print("final min cost calc = " .. min_cost)
-
-    cached_tasks_info[task_id][ "min_reward" ] = min_cost
-    cached_tasks_info[task_id][ "max_reward" ] = max_cost
 
     return min_cost, max_cost
 end
@@ -510,13 +489,6 @@ local function calc_reward_money(task_id)
     local s = tostring(dbg_dump(on_comp))
     local min, max = 0, 0
 
-    if cached_tasks_info and cached_tasks_info[task_id].min_reward and cached_tasks_info[task_id].max_reward then
-        min = cached_tasks_info[task_id].min_reward
-        max = cached_tasks_info[task_id].max_reward
-
-        return min, max
-    end
-
     for key,f in pairs(supported_tasks_funcs) do 
         if string.find(s, tostring(key)) then
             dbg_print("key = " .. tostring(key))
@@ -526,7 +498,7 @@ local function calc_reward_money(task_id)
             
             cached_tasks_info[task_id][ "min_reward" ] = min or 0
             cached_tasks_info[task_id][ "max_reward" ] = max or 0
-
+            
             -- var.min_reward = min 
             -- var.max_reward = max 
             -- save_var(db.actor, task_id, var)
