@@ -660,7 +660,6 @@ end
 -- TODO: patches for artifact fetch task fails
 -- Gives double "you have x in inventory messages"
 
--- TODO: fails completely if ym_debug not loaded
 
 local function generic_postpone(task_id)
     local min,max = calc_reward_money(task_id)
