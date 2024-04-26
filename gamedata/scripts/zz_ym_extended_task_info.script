@@ -78,7 +78,7 @@ local function get_eco_multi()
 	return game_difficulties.get_eco_factor("rewards") or 1
 end
 
--- dumps a task's on_complete condition list and convert it to a single string
+-- dumps a task's on_complete condition list and converts it to a single string
 local function get_on_comp_condlist(task_id)
     if not task_id then return end
     dbg_print("get_on_comp_condlist")
@@ -135,24 +135,6 @@ local function get_random_money_arg(task_id)
         end
     end
         deepprint(condlist)
-    -- i,j = string.find(s, "%d*%:%d*") 
-    -- if (i and j) then
-    --     dbg_print("i = " .. tostring(i))
-    --     dbg_print("j = " .. tostring(j))
-    --     local ss = string.sub(s, i, j)
-    --     local ss_table = str_explode(ss, ":")
-    --     dbg_print("ss = " .. tostring(ss))
-    --     if ss_table then
-    --         min_reward = tonumber( ss_table[1] ) or 0
-    --         max_reward = tonumber( ss_table[2] ) or 0
-    --         dbg_print("min_reward = " .. tostring(min_reward))
-    --         dbg_print("max_reward = " .. tostring(max_reward))
-    --     end
-    --     -- local k,l = string.find(ss, "%d*%:")
-    --     -- if (k and l) then
-    --     --     -- local sss = string.sub(ss, k, l)
-    --     --     local m,n = string.find(ss, "%:%d*")
-    -- end
 
     return min_reward, max_reward 
 end
@@ -202,6 +184,7 @@ local function get_static_money_arg(task_id)
     dbg_print("eco_multi = " .. tostring(eco_multi))
     if min_reward then min_reward = min_reward * eco_multi end
 
+    -- max_reward is always going to return 0 here
     return min_reward, max_reward or 0,0
 end
 
@@ -294,6 +277,7 @@ local function get_random_money_by_dist_arg(task_id)
     return  min_reward, max_reward
 end
 
+-- Parses the on_complete condition list for the reward multiplier argument 
 local function get_fetch_reward_and_remove_multiplier(task_id)
     local multi = 1
     local on_comp = task_id and get_on_comp_condlist(task_id)
@@ -412,6 +396,7 @@ local function get_fetch_reward(task_id)
 end
 
 
+--#region =====COMPATIBILITY SECTION===============================================================================================================================================
 -- PLEASE BE AWARE OF THE COMMAS at the end of these strings
 -- The mod string searches through a table-version of the on_complete line of the task
 -- The commas narrow down results so similar function names don't trigger in redudant spots
@@ -485,14 +470,43 @@ function ym_get_supported_task_funcs()
     return supported_tasks_funcs
 end
 
+-- Add a reward calculation function to each task's on_complete reward function
+-- can also be used to REPLACE pre-defined functions (i.e. replace "fetch_reward_and_remove," with a monkey patch)
+-- EXAMPLE
+-- Change fetch rewards by some factor
+--[[==
+        printf("! Monkey Patching zz_ym_extended_task_info")
+
+        local org_get_fetch_reward = ym_extended_task_info.ym_get_fetch_reward
+        local add_task_func = ym_extended_task_info.ym_add_supported_task_func
+        local remove_task_func = ym_extended_task_info.ym_remove_supported_task_func
+
+        ym_extended_task_info.ym_get_fetch_reward = function(task_id)
+            printf("!Monkey Patch of ym_get_fetch_reward")
+            local org_min, org_max = org_get_fetch_reward(task_id)
+            local factor = 10.0
+            local min, max = 0, 0
+            min = org_min * factor
+            max  =org_max * factor
+
+            printf("! min = %s, max = %s",min, max)
+            return min, max
+        end
+
+        add_task_func("fetch_reward_and_remove,", ym_extended_task_info.ym_get_fetch_reward)
+-- ==]]
+
 function ym_add_supported_task_func(func_name, func)
     supported_tasks_funcs[func_name] = func
 end
 
+-- Allow removing support for a certain kind of task with a certain on_complete function
 function ym_remove_supported_task_func(func_name)
     supported_tasks_funcs[func_name] = nil
 end
+--#endregion ==========================================================================================================================================================
 
+-- Final function to loop through all keys in supported_tasks_funcs and their assigned funcs
 local function calc_reward_money(task_id)
 
 	-- local var = load_var(db.actor, task_id)
@@ -912,22 +926,10 @@ if ui_pda_taskboard_tab then
         dbg_print("get_long_task_description", true)
         local task_id = task_data.task_id
         if not task_id then return org_get_fetch_task_descr(task_data) end
-        -- dbg_print("string.gsplit(600:800) = " .. dbg_dump( str_explode("600:800", ":") ))
-
-        -- dbg_print("is_fetchreward_task = " .. tostring(is_fetchreward_task(task_id)))
-        -- if not is_fetchreward_task(task_id) then return org_get_fetch_task_descr(task_data) end
         if not is_supported_task(task_id) then return org_get_fetch_task_descr(task_data) end
 
         dbg_print("task_id = " .. tostring(task_id))
-
-        -- if task_data then return org_get_fetch_task_descr(task_data) end
-
-
-        -- local cfgcache = axr_task_manager.CFG_CACHE
-        -- local t = game.translate_string(cfgcache[task_id].fetch_descr)
-        -- local result = cfgcache[task_id] and cfgcache[task_id].fetch_descr and t
         local result = org_get_fetch_task_descr(task_data)
-
         if result then dbg_print("result = " .. tostring(result)) end
 
 
@@ -944,25 +946,9 @@ if ui_pda_taskboard_tab then
         if sec then dbg_print("kind = " .. tostring(get_sec_kind(sec))) end
 
         -- Reward calculation
-        -- local on_comp = get_on_comp_condlist(task_id)
-        -- local s = tostring(dbg_dump(on_comp))
-        -- for key, func in pairs(supported_tasks_funcs) do
-        --     if string.find(s, tostring(key)) then
-        --         dbg_print("Supported task func is = " .. tostring(key))
-        --         min_cost, max_cost = supported_tasks_funcs[key](task_id)
-        --     end
-        -- end
-        -- local min_cost, max_cost =  calc_rewards(task_id)
-        -- local eco_multi = game_difficulties.get_eco_factor("rewards") or 1
-
-
         local min_cost, max_cost = calc_reward_money(task_id)
         dbg_print("min_reward = " .. tostring(min_cost))
         dbg_print("max_reward = " .. tostring(max_cost))
-
-
-        -- org_get_fetch_task_descr(task_data)
-        -- do return true end
 
 
         if (((not min_cost or not max_cost) or (min_cost <= 0))) then
@@ -973,45 +959,8 @@ if ui_pda_taskboard_tab then
 
         if result then
             local reward_s = combined_caption_and_reward(min_cost, max_cost) or ""
-            -- if is_i_part(sec) then
-            -- reward_s = game.translate_string("st_ym_reward_approx_100") or ""
-            -- else
-            --     reward_s = game.translate_string("st_ym_reward_1unit") or ""
-            -- end
-            -- return (result .. " " .. strformat(reward_s, tostring(cost) or "")) or org_get_fetch_task_descr(task_id)
 
-            -- local reward_icon    = "ui_inGame2_Dengi_otdani"
-            -- -- local reward_total = "Reward:" .. "\\n" .. "Min: " .. min_cost .. "\\n" .. "Max: " .. max_cost
-            -- local grn_text       = utils_xml.get_color("pda_green")
-            -- local ylw_text       = utils_xml.get_color("pda_yellow")
-            -- local clr_txt        = utils_xml.get_color("pda_white")
-            -- local test_s         = "%$ylw_textMin: %$clr_number$min $new_line%$grn_textMax: %$clr_number$max"
-            -- -- local reward_caption = gc("ym_ui_caption_reward")
-            -- -- local reward_caption = "%$clr_textReward:" .. "\\n"
-            -- local reward_caption = gc("ym_ui_caption_reward") .. "\\n"
-            -- local min_max_s      = gc("ym_ui_reward_total")
-            -- -- if is_pda_taskboard_active() then
-            -- local reward_total   = parse_keys( reward_caption .. min_max_s,
-            --     {
-            --         ["min"] = min_cost,
-            --         ["max"] = max_cost,
-            --         ["grn_text"] = grn_text,
-            --         ["new_line"] = "\\n",
-            --         ["clr_number"] = clr_txt,
-            --         ["clr_text"] = clr_txt,
-            --         ["ylw_text"] = ylw_text,
-            --     })
-
-            -- return result .. "\\n" .. reward_total
             return result .. "\\n" .. reward_s
-
-
-            -- return result and reward_total and result .. "\\n" .. reward_total or org_get_fetch_task_descr(task_id)
-            -- return result .. "\\n" .. reward_caption .. min_max_s or result
-            -- return result .. "\\n" .. string.format("Min: %s%sMax: %s", min_cost,"\\n",max_cost)
-            -- return result .. "\\n" .. "Min: " .. 0 .. "\\n" .. "Max: " .. 0
-
-            -- return result .. " REWARD"
         end
         return org_get_fetch_task_descr(task_id)
     end
