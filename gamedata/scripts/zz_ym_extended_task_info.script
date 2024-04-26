@@ -94,7 +94,7 @@ local function get_on_comp_condlist(task_id)
     end
 end
 
-local function get_random_money_arg(task_id)
+function ym_get_random_money_rewards(task_id)
     
     dbg_print("get_random_money_arg")
     local condlist = get_on_comp_condlist(task_id)
@@ -134,12 +134,12 @@ local function get_random_money_arg(task_id)
 
         end
     end
-        deepprint(condlist)
+    deepprint(condlist)
 
     return min_reward, max_reward 
 end
 
-local function get_static_money_arg(task_id)
+function ym_get_static_money_reward(task_id)
     
     dbg_print("get_static_money_arg")
     local condlist = get_on_comp_condlist(task_id)
@@ -189,7 +189,7 @@ local function get_static_money_arg(task_id)
 end
 
 
-local function get_random_money_by_dist_arg(task_id)
+function ym_get_random_money_by_dist_rewards(task_id)
     
     dbg_print("get_random_money_by_dist_arg")
     local condlist = get_on_comp_condlist(task_id)
@@ -331,7 +331,7 @@ end
 --*	local factor = (eco == 3 and 0.4) or (eco == 2 and 0.5) or 0.6
 
 -- calculate mininum and maximum possible rewards based off item base cost and other factors
-local function get_fetch_reward(task_id)
+function ym_get_fetch_reward(task_id)
     if not task_id then return end
 
     local section = load_var(db.actor, task_id .. "_fetch", "")
@@ -402,10 +402,10 @@ end
 -- The commas narrow down results so similar function names don't trigger in redudant spots
 -- or in false-positive instances
 local supported_tasks_funcs = {
-    [ "fetch_reward_and_remove," ] = get_fetch_reward,
-    [ "reward_random_money," ] = get_random_money_arg,
-    [ "reward_random_money_by_dist" ] = get_random_money_by_dist_arg,
-    [ "reward_money," ] =  get_static_money_arg
+    [ "fetch_reward_and_remove," ] = ym_get_fetch_reward,
+    [ "reward_random_money," ] = ym_get_random_money_rewards,
+    [ "reward_random_money_by_dist" ] = ym_get_random_money_by_dist_rewards,
+    [ "reward_money," ] =  ym_get_static_money_reward
 }
 
 --#region
