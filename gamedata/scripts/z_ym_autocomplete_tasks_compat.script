@@ -1,0 +1,74 @@
+
+local function dbg_print(msg,...)
+    if not ym_debug then return end
+
+    ym_debug.set_modname("AT YM_EXTENDED_TASK_INFO COMPENSATION COMPATIBILITY")
+    ym_debug.dbg_print(msg,...)
+		--exec_console_cmd("flush")
+end
+
+
+
+
+-- TODO: To handle item compensation, the compensation would have to be summed with the other potential reward calculations
+if zz_ym_extended_task_info and z_autocomplete_tasks_core then
+    printf("! Monkey Patching zz_ym_extended_task_info for Autocomplete Tasks")
+
+    local ym_eti_core = zz_ym_extended_task_info
+    local org_get_fetch_reward = ym_eti_core.ym_get_fetch_reward
+    local add_task_func = ym_eti_core.ym_add_supported_task_func
+
+    local utils = autocomplete_tasks_utils
+    local get_base_cost = utils.get_base_cost
+    local get_mcm_config = autocomplete_tasks_mcm.get_config
+    -- local remove_task_func = zz_ym_extended_task_info.ym_remove_supported_task_func
+
+    ym_reward_item_compensation = function(task_id)
+        if not task_id then return end
+
+        local itm_arg = ym_eti_core.get_reward_item_arg(task_id)
+        if not itm_arg then return end
+
+        local money_tbl = {}
+        local lowest_reward = math.huge
+        local highest_reward = -math.huge
+        if itm_arg then
+            for k, v in pairs( itm_arg ) do
+                dbg_print("v = " .. tostring(v))
+                local cost = utils.get_base_cost(v)
+                dbg_print("cost of v = " .. tostring(cost))
+
+                if (cost > highest_reward) then
+                    highest_reward = cost 
+                end
+                if (cost < lowest_reward) then
+                    lowest_reward = cost 
+                end
+
+                money_tbl[v] = cost
+            end
+        end
+
+
+        -- local section = load_var(db.actor, task_id .. "_fetch", "")
+        -- -- local amount = load_var(db.actor, task_id .. "_fetch_count") or 1
+        -- -- local item_cost = section and ini_sys:r_float_ex(section, "cost") or 1
+        -- local sec, amount = string.match(section, "(.*)__([1-9])")
+        -- local item_cost = 0
+        -- if not sec then
+        --     item_cost =  ini_sys:r_float(section, "cost") or 0
+        -- end
+
+        -- -- itm is a multiuse item with a defined amount
+        -- local max_uses = ini_sys:r_float(sec, "max_uses") or amount
+        -- item_cost = ini_sys:r_float(sec, "cost") or 0
+        -- item_cost = item_cost * (amount / max_uses)
+        -- -- local item_cost = utils.get_base_cost(section) * utils.get_generic_sell_discount() * get_mcm_config("at_general", "compensation_coefficient") 
+        local item_cost = 1000
+        -- dbg_print("item_cost = " .. tostring(item_cost))
+        return item_cost, 0 -- return min_reward, max_reward
+    end
+
+    add_task_func("reward_item,", ym_reward_item_compensation)
+    add_task_func("reward_random_item,", ym_reward_item_compensation)
+end
