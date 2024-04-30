@@ -94,6 +94,7 @@ local function get_on_comp_condlist(task_id)
     end
 end
 
+--#region =REWARD CALCULATIONS=================================================================================================================================================================================================================================================
 function ym_get_random_money_rewards(task_id)
     
     dbg_print("get_random_money_arg")
@@ -191,7 +192,7 @@ end
 
 function ym_get_random_money_by_dist_rewards(task_id)
     
-    dbg_print("get_random_money_by_dist_arg")
+    dbg_print("get_random_money_by_dist_arg", true)
     local condlist = get_on_comp_condlist(task_id)
 
 
@@ -370,6 +371,9 @@ end
 --* local eco = game_difficulties.get_eco_factor("type") or 0.5
 --*	local factor = (eco == 3 and 0.4) or (eco == 2 and 0.5) or 0.6
 
+-- function get_base_cost(section,amount)
+--     return section and ini_sys:r_float_ex(section, "cost") or 1
+-- end
 -- calculate mininum and maximum possible rewards based off item base cost and other factors
 function ym_get_fetch_reward(task_id)
     if not task_id then return end
@@ -435,6 +439,7 @@ function ym_get_fetch_reward(task_id)
     return min_cost, max_cost
 end
 
+--#endregion============================================================================================================================================================================================================================
 
 --#region =====COMPATIBILITY SECTION===============================================================================================================================================
 -- PLEASE BE AWARE OF THE COMMAS at the end of these strings
@@ -548,38 +553,36 @@ end
 
 -- Final function to loop through all keys in supported_tasks_funcs and their assigned funcs
 local function calc_reward_money(task_id)
-
-	-- local var = load_var(db.actor, task_id)
-    -- if var and var.min_reward and var.max_reward then return var.min_reward, var.max_reward end
-
-
     local on_comp = get_on_comp_condlist(task_id)
     local s = tostring(table_dump(on_comp))
-    local min, max = 0, 0
+    local lowest_reward, highest_reward = 0, 0
 
     for key,f in pairs(supported_tasks_funcs) do 
         if string.find(s, tostring(key)) then
             dbg_print("key = " .. tostring(key))
-            min, max = f(task_id)
+            local min, max = f(task_id)
             if min then dbg_print("min = " .. tostring(min)) end
             if max then dbg_print("max = " .. tostring(max)) end
             
             
-            -- var.min_reward = min 
-            -- var.max_reward = max 
-            -- save_var(db.actor, task_id, var)
-            if (min and max) then
-                return min, max 
-            elseif (not max and min) then
-                return min, 0
-            elseif (not min and max ) then
-                return 0, max
-            end
+            -- if (min and max) then
+            --     return min, max 
+            -- elseif (not max and min) then
+            --     return min, 0
+            -- elseif (not min and max ) then
+            --     return 0, max
+            -- end
 
+            lowest_reward = lowest_reward + min
+            highest_reward = highest_reward + max
+
+            dbg_print("lowest_reward now = " .. tostring(lowest_reward))
+            dbg_print("highest_reward now = " .. tostring(highest_reward))
         end
     end
 
-    return 0, 0
+    
+    return lowest_reward, highest_reward
 end
 
 local grn_text       = utils_xml.get_color("pda_green")
@@ -746,7 +749,9 @@ function xr_effects.setup_fetch_task(actor, npc, p)
 
     local function postpone(task_id, section, amount)
         if not task_id then return end
-        task_id = string.sub(task_id,1,-7) or "" -- because it ends with fetch
+        if string.find(task_id, "_fetch") then
+            task_id = string.sub(task_id,1,-7) or "" -- because it ends with fetch
+        end
 
         if (is_pda_taskboard_active()) or (not is_supported_task(task_id)) then
             dbg_print("Not a supported task")
