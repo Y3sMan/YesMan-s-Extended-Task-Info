@@ -31,5 +31,7 @@
 ### Important points
 * add_task_func("fetch_reward_and_remove,", zz_ym_extended_task_info.ym_get_fetch_reward)
     allows adding new reward calculation functions and REPLACING vanilla calculations
+    * This is required in order to replace instance inside the list supported_task_funcs in zz_ym_extended_task_info.script
+    * Also be are of the "," at the end of some of the function-string names. Basically, the on_complete condlist is converted into a string, and the comma prevents false-positives with similar strings(i.e. "fetch_reward_and_remove_for_my_awesome_task"). 
 
-* Name of monkey patch is not important
+* Name of monkey patch script is not important
