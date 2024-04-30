@@ -318,6 +318,46 @@ local function get_fetch_reward_and_remove_multiplier(task_id)
     return multi or 1
 end
 
+function get_reward_item_arg(task_id)
+    dbg_print("GET_REWARD_ITEM_ARG", true)
+    local condlist = get_on_comp_condlist(task_id)
+
+    local reward_itms_tbl = nil
+
+    local visited = {}
+    local breakFlag = false
+    local function deepprint(tbl)
+        for k, v in pairs(tbl) do
+            if breakFlag then return end
+
+            -- dbg_print("key = " .. tostring(k))
+            -- dbg_print("val = " .. tostring(v))
+
+            if type(v) == 'table' then
+                if visited[v] == true then return end
+                visited[v] = true
+
+                deepprint(v)
+            else
+                if (string.find(tostring(v), "reward_item") or string.find(tostring(v), "reward_random_item")) then
+                    dbg_print("found reward_item or reward_random_item at key = " .. tostring(k))
+                    reward_itms_tbl = tbl[3]
+                    -- dbg_print("reward_item table = " .. tostring(table_dump(tbl[k+2])))
+
+                    breakFlag = true
+                    break
+                end
+            end
+
+        end
+    end
+
+    deepprint(condlist)
+
+
+    ym_debug.dbg_newline()
+    return reward_itms_tbl 
+end
 
 local function round_reward(reward, eco_multi)
     return reward and eco_multi and (math.ceil((reward * eco_multi) / 50) * 50) or 0
