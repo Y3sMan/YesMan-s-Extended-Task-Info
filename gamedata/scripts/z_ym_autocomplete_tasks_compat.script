@@ -59,16 +59,29 @@ if zz_ym_extended_task_info and z_autocomplete_tasks_core then
         --     item_cost =  ini_sys:r_float(section, "cost") or 0
         -- end
 
-        -- -- itm is a multiuse item with a defined amount
-        -- local max_uses = ini_sys:r_float(sec, "max_uses") or amount
-        -- item_cost = ini_sys:r_float(sec, "cost") or 0
-        -- item_cost = item_cost * (amount / max_uses)
-        -- -- local item_cost = utils.get_base_cost(section) * utils.get_generic_sell_discount() * get_mcm_config("at_general", "compensation_coefficient") 
-        local item_cost = 1000
-        -- dbg_print("item_cost = " .. tostring(item_cost))
-        return item_cost, 0 -- return min_reward, max_reward
+            local org_combined_cap_and_reward = ym_utils.combined_caption_and_reward
+            function ym_eti_utils.combined_caption_and_reward(min, max, task_id)
+                if not ym_utils.ym_does_task_have_reward_item(task_id) then return org_combined_cap_and_reward(min, max, task_id) end
+
+                ym_utils.ym_reset_reward_caption()
+                local org_cap = ym_utils.ym_get_reward_caption()
+                if (string.find(org_cap, " (with item compensation)")) then
+                    
+                end
+                local new_cap = org_cap .. " (with item compensation)"
+                ym_utils.ym_set_reward_caption(new_cap)
+
+                return org_combined_cap_and_reward(min, max)
+            end
+        end
     end
+
 
     add_task_func("reward_item,", ym_reward_item_compensation)
     add_task_func("reward_random_item,", ym_reward_item_compensation)
+
+
+    function on_game_start()
+        RegisterScriptCallback("on_game_load", override)
+    end
 end
