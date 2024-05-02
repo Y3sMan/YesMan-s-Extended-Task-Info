@@ -17,7 +17,12 @@ end
 -- #region helper functions
 local parse_keys = utils_data.parse_string_keys
 local gc = game.translate_string
+local newline = function()
+    printf("\n")
+end
+-- imports
 local utils = ym_eti_utils
+
 
 if z_taskboard_overrides then
     dbg_print("PDA TASKBOARD override loaded")
@@ -46,7 +51,8 @@ end
 -- key = task_id, value = news_text
 
 if z_taskboard_overrides then
-    dbg_print("PDA TASKBOARD override loaded", true)
+    newline()
+    dbg_print("PDA TASKBOARD override loaded")
     local tskbrd = z_taskboard_overrides
     -- local pda_taskboard_create_overrides = tskbrd.create_overrides
     
