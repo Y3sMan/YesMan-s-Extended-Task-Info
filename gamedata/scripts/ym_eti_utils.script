@@ -190,6 +190,12 @@ function ym_get_random_money_rewards(task_id)
     return min_reward, max_reward 
 end
 
+function ym_setup_random_money_info(task_id)
+    local min, max = ym_get_random_money_rewards(task_id)
+
+    return min, max
+end
+
 function ym_get_static_money_reward(task_id)
     
     dbg_print("get_static_money_arg")
@@ -447,7 +453,206 @@ function ym_get_fetch_reward(task_id)
     return min_cost, max_cost
 end
 
+function ym_setup_fetch_info(task_id)
+    local min, max = ym_get_fetch_reward(task_id) or 0,0
+
+end
+
+
 --#endregion============================================================================================================================================================================================================================
+
+
+--#region text formatting
+
+function ym_set_reward_text_min(new_txt)
+    reward_text_min = new_txt
+end
+
+function ym_set_reward_text_max(new_txt)
+    reward_text_max = new_txt
+end
+
+function ym_get_reward_text_min()
+    return reward_text_min
+end
+
+
+function ym_get_reward_text_max()
+    return reward_text_max
+end
+
+function ym_get_parsed_reward_text_min(min)
+    local tbl_keys       = {
+        ["min"] = min,
+        ["grn_text"] = grn_text,
+        ["new_line"] = "\\n",
+        ["clr_number"] = clr_txt,
+        ["clr_text"] = clr_txt,
+        ["ylw_text"] = ylw_text,
+    }
+    return 
+end
+
+function ym_reset_reward_text_min()
+    reward_text_min = gc("ym_ui_reward_min")
+end
+
+function ym_reset_reward_text_max()
+    reward_text_max = gc("ym_ui_reward_max")
+end
+
+function ym_reset_reward_text_min_max()
+    reward_text_min = gc("ym_ui_reward_min")
+    reward_text_max = gc("ym_ui_reward_max")
+end
+
+function ym_set_reward_icon(new_icon)
+    reward_icon = new_icon
+end
+
+function ym_get_reward_icon()
+    return reward_icon
+end
+
+function ym_set_reward_caption(new_cap)
+    reward_caption = new_cap
+end
+
+function ym_get_reward_caption()
+    return reward_caption
+end
+
+-- Return a formatted, translated caption
+--[[
+    i.e.
+    *Dialog description*
+    Pre_cap_text Reward Post_cap_text:
+    
+    EXAMPLE
+    fetch Reward (with compensation):
+
+]]
+function ym_reward_caption(pre_cap_text, caption, post_cap_text, parse_tbl)
+    local pre = parse_keys(pre_cap_text, parse_tbl)
+    local cap = parse_keys(caption, parse_tbl)
+    local post = parse_keys(post_cap_text, parse_tbl)
+    return pre .. cap .. post
+end
+
+function ym_reset_reward_caption()
+    reward_caption =  gc("ym_ui_caption_reward")
+end
+
+function ym_reset_reward_text()
+    ym_reset_reward_caption()
+    ym_reset_reward_text_min_max()
+end
+
+-- Returns a pretty string formatted as such:
+-- If there is no max reward, "max" is not included
+--[[
+    min: some number
+    max: some number 
+]]
+function format_reward_string(min_cost, max_cost, min_s, max_s)
+    local min_s = min_s or gc("ym_ui_reward_min") 
+    local max_s = max_s or ""
+
+    if ( (type(max_cost) == "number") and (  max_cost > 0 )) then 
+        max_s = gc("ym_ui_reward_max")
+    end
+
+    local min_max_s  = min_s .. "\\n" .. max_s
+    local reward_total   = ""
+    local tbl_keys       = {
+        ["min"] = min_cost,
+        ["max"] = max_cost,
+        ["grn_text"] = grn_text,
+        ["new_line"] = "\\n",
+        ["clr_number"] = clr_txt,
+        ["clr_text"] = clr_txt,
+        ["ylw_text"] = ylw_text,
+    }
+    reward_total = parse_keys( min_max_s, tbl_keys)
+    local final_s =  reward_total
+
+    return final_s
+end
+
+
+function ym_generic_reward_caption()
+    return gc("ym_ui_caption_reward")
+end
+
+
+function ym_parse_reward_caption()
+    -- tbl_keys:
+    -- Expects at the mininum:
+        --[[ 
+        ["min"] = min_cost,
+        ["max"] = max_cost,
+        ["grn_text"] = grn_text,
+        ["new_line"] = "\\n",
+        ["clr_number"] = clr_txt,
+        ["clr_text"] = clr_txt,
+        ["ylw_text"] = ylw_text,
+        ]]
+
+    local tbl_keys       = {
+        ["grn_text"] = grn_text,
+        ["new_line"] = "\\n",
+        ["clr_number"] = clr_txt,
+        ["clr_text"] = clr_txt,
+        ["ylw_text"] = ylw_text,
+    }
+
+    return parse_keys(ym_generic_reward_caption, tbl_keys)
+end
+
+function ym_generic_reward_text_min()
+    return gc("ym_ui_reward_min")
+end
+
+function ym_generic_reward_text_max()
+    return gc("ym_ui_reward_max")
+end
+
+function ym_generic_reward_text()
+    local min_s = ym_generic_reward_text_min()
+    local max_s = ym_generic_reward_text_max()
+
+    return  min_s .. "\\n" .. max_s
+end
+
+function ym_parse_reward_text(min, max)
+    -- tbl_keys:
+    -- Expects at the mininum:
+        --[[ 
+        ["min"] = min_cost,
+        ["max"] = max_cost,
+        ["grn_text"] = grn_text,
+        ["new_line"] = "\\n",
+        ["clr_number"] = clr_txt,
+        ["clr_text"] = clr_txt,
+        ["ylw_text"] = ylw_text,
+        ]]
+
+    local tbl_keys       = {
+        ["min"] = min,
+        ["max"] = max,
+        ["grn_text"] = grn_text,
+        ["new_line"] = "\\n",
+        ["clr_number"] = clr_txt,
+        ["clr_text"] = clr_txt,
+        ["ylw_text"] = ylw_text,
+    }
+
+    return parse_keys(ym_generic_reward_text(), tbl_keys)
+end
+
+
+
+
 
 --#region =====COMPATIBILITY SECTION===============================================================================================================================================
 -- PLEASE BE AWARE OF THE COMMAS at the end of these strings
@@ -584,22 +789,36 @@ function calc_reward_money(task_id)
     return lowest_reward, highest_reward
 end
 
-local grn_text       = utils_xml.get_color("pda_green")
-local ylw_text       = utils_xml.get_color("pda_yellow")
-local clr_txt        = utils_xml.get_color("pda_white")
+function aggregate_reward_caption(task_id)
+    local on_comp = get_on_comp_condlist(task_id)
+    local s = tostring(table_dump(on_comp))
+    local caption = ""
 
-local reward_icon    = "ui_inGame2_Dengi_otdani"
-local reward_caption =  gc("ym_ui_caption_reward")
+    for key,tbl_func in pairs(supported_tasks_funcs) do 
+        local f = nil
+        if (type(tbl_func) == "table") then
+            f = tbl_func[2]
+        end
+        if not f then 
+            goto continue
+        end
 
-function format_reward_string(min_cost, max_cost)
-    -- return (result .. " " .. strformat(reward_s, tostring(cost) or "")) or org_get_fetch_task_descr(task_id)
-    -- local reward_total = "Reward:" .. "\\n" .. "Min: " .. min_cost .. "\\n" .. "Max: " .. max_cost
-    local test_s         = "%$ylw_textMin: %$clr_number$min $new_line%$grn_textMax: %$clr_number$max"
-    -- local reward_caption = gc("ym_ui_caption_reward")
-    -- local reward_caption = "%$clr_textReward:" .. "\\n"
-    local reward_caption = gc("ym_ui_caption_reward") .. "\\n"
-    local min_s      = gc("ym_ui_reward_min")
-    local max_s      = ""
+        local new_cap = f()
+
+        if (string.find(s, tostring(key)) and (caption ~= new_cap)) then
+            dbg_print("key = %s", key)
+            caption = caption + new_cap
+        end
+
+        ::continue::
+    end
+    return caption
+end
+
+function aggregate_reward_text(task_id, min, max)
+    local on_comp = get_on_comp_condlist(task_id)
+    local s = tostring(table_dump(on_comp))
+    local text = ""
 
     if ( (type(max_cost) == "number") and (  max_cost > 0 )) then 
         max_s = gc("ym_ui_reward_max")
