@@ -89,13 +89,63 @@ if ym_eti_utils and z_autocomplete_tasks_core then
         end
 
 
-        -- local section = load_var(db.actor, task_id .. "_fetch", "")
-        -- -- local amount = load_var(db.actor, task_id .. "_fetch_count") or 1
-        -- -- local item_cost = section and ini_sys:r_float_ex(section, "cost") or 1
-        -- local sec, amount = string.match(section, "(.*)__([1-9])")
-        -- local item_cost = 0
-        -- if not sec then
-        --     item_cost =  ini_sys:r_float(section, "cost") or 0
+    function ym_setup_reward_items_info(task_id)
+        if (not isATEnabled) or (not isCompensate) then
+            return 0, 0 
+        end
+
+        local min_comp, max_comp = ym_reward_item_compensation(task_id)
+        ym_utils.ym_set_reward_caption("reward item test 1")
+
+        local tbl_keys = {
+            ["min_compensation"] = min_comp,
+            ["grn_text"] = grn_text,
+            ["max_compensation"] = max_comp,
+            ["clr_text"] = clr_txt,
+        }
+
+        local org_min  = ym_utils.ym_get_reward_text_min()
+        org_min = org_min .. " ( +%$grn_text$min_compensation$clr_text)"
+        local s        = parse_keys(org_min, tbl_keys)
+        ym_utils.ym_set_reward_text_min(s)
+
+        local org_max = ym_utils.ym_get_reward_text_max()
+        org_max = org_max .. " ( +%$grn_text$max_compensation$clr_text)"
+        s = parse_keys(org_max, tbl_keys)
+        ym_utils.ym_set_reward_text_max(s)
+        -- save_var(db.actor, (task_id .. "_ym_reward_caption"), "Reward (with item compensation):")
+
+        return 0, 0
+    end
+
+    function ym_reward_item_caption()
+        return "Reward (with item compensation):"
+    end
+
+    function ym_reward_item_text_min()
+        return gc("ym_ui_reward_min") .. " (+%$min_comp)"
+    end
+
+    function ym_reward_item_text_max()
+        return gc("ym_ui_reward_max") .. " (+%$max_comp)"
+    end
+
+    function ym_reward_item_text(min_cost, max_cost,min_comp, max_comp)
+        local s = ym_reward_item_text_min() .. "\\n" .. ym_reward_item_text_max()
+        local tbl_keys = {
+            ["min"] = min_cost,
+            ["max"] = max_cost,
+            ["min_comp"] = min_comp,
+            ["max_comp"] = max_comp,
+            ["grn_text"] = grn_text,
+            ["new_line"] = "\\n",
+            ["clr_number"] = clr_txt,
+            ["clr_text"] = clr_txt,
+            ["ylw_text"] = ylw_text,
+        }
+        return parse_keys(s, tbl_keys)
+    end
+
         -- end
 
             local org_combined_cap_and_reward = ym_utils.combined_caption_and_reward
