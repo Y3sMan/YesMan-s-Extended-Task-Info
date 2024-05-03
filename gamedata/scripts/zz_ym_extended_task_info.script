@@ -326,16 +326,14 @@ function xr_effects.on_init_delivery_task(actor,npc,p)
 dbg_print("ON_INIT_DELIVERY_TASK")
 	original_on_init_delivery_task(actor,npc,p)
 	
-	-- if not is_pda_taskboard_active() then
-	-- 	RemoveTimeEvent(0,"on_init_delivery_task")
-	-- end
-	
+		
 	local task_id = p[1]
     if not task_id then return end
 
 	if not utils.is_pda_taskboard_active() then
 		-- Removes default time event, which prevents printing of default quest info
-		RemoveTimeEvent(0,"on_init_delivery_task") 
+		-- RemoveTimeEvent(0,"on_init_delivery_task") 
+		RemoveTimeEvent(2,"on_init_delivery_task") 
 	end
 
 	CreateTimeEvent(2,"on_init_delivery_task",0,utils.generic_postpone,task_id)
