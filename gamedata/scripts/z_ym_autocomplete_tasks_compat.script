@@ -11,15 +11,15 @@ end
 
 
 -- TODO: To handle item compensation, the compensation would have to be summed with the other potential reward calculations
-if zz_ym_extended_task_info and z_autocomplete_tasks_core then
+if ym_eti_utils and z_autocomplete_tasks_core then
     printf("! Monkey Patching zz_ym_extended_task_info for Autocomplete Tasks")
 
-    local ym_eti_core = zz_ym_extended_task_info
-    local org_get_fetch_reward = ym_eti_core.ym_get_fetch_reward
-    local add_task_func = ym_eti_core.ym_add_supported_task_func
+    local ym_utils = ym_eti_utils 
+    local org_get_fetch_reward = ym_utils.ym_get_fetch_reward
+    local add_task_func = ym_utils.ym_add_supported_task_func
 
-    local utils = autocomplete_tasks_utils
-    local get_base_cost = utils.get_base_cost
+    local at_utils = autocomplete_tasks_utils
+    local get_base_cost = at_utils.get_base_cost
     local get_mcm_config = autocomplete_tasks_mcm.get_config
     -- local remove_task_func = zz_ym_extended_task_info.ym_remove_supported_task_func
 
