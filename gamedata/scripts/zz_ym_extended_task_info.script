@@ -113,29 +113,46 @@ function xr_effects.setup_fetch_task(actor, npc, p)
 	local npc_id  = npc and npc:id()
     local sec = load_var(db.actor, npc_id .. "_fetch", "")
     local cnt = sec and load_var(db.actor, npc_id .. "_count") or 1
+    local task_id = p[1]
+
+    if not task_id then return end
+    if string.find(task_id, "_fetch") then
+        task_id = string.sub(task_id, 1, -7) or ""   -- because it ends with fetch
+    end
+
+    -- local function postpone(task_id, section, amount)
+    --     if not task_id then return end
+    --     if string.find(task_id, "_fetch") then
+    --         task_id = string.sub(task_id,1,-7) or "" -- because it ends with fetch
+    --     end
+
+    --     if (utils.is_pda_taskboard_active()) or (not utils.is_supported_task(task_id)) then
+    --         dbg_print("Not a supported task")
+    --         -- cache_task_text(task_id, news_caption, news_text)
+    --         org_fetch_postpone(task_id, section, amount)
+    --         return true
+    --     end
+
+    --     local min, max = utils.calc_reward_money(task_id)
+    --     local news_caption = utils.ym_get_reward_caption() or "error"
+    --     local news_text = utils.format_reward_string(min, max)
+
+	-- 	db.actor:give_talk_message2(news_caption, news_text, "utils.ym_get_reward_icon()", "iconed_answer_item")
+    --     return true
+    -- end
 
     local function postpone(task_id, section, amount)
-        if not task_id then return end
-        if string.find(task_id, "_fetch") then
-            task_id = string.sub(task_id,1,-7) or "" -- because it ends with fetch
-        end
-
         if (utils.is_pda_taskboard_active()) or (not utils.is_supported_task(task_id)) then
-            dbg_print("Not a supported task")
             -- cache_task_text(task_id, news_caption, news_text)
             org_fetch_postpone(task_id, section, amount)
             return true
         end
 
-        local min, max = utils.calc_reward_money(task_id)
-        local news_caption = utils.ym_get_reward_caption() or "error"
-        local news_text = utils.format_reward_string(min, max)
-
-		db.actor:give_talk_message2(news_caption, news_text, "utils.ym_get_reward_icon()", "iconed_answer_item")
-        return true
+        return utils.generic_postpone(task_id)
     end
 
-	CreateTimeEvent(1,"setup_fetch_task", 0, postpone, p[1], sec, cnt)
+
+	CreateTimeEvent(2,"setup_fetch_task", 0, postpone, task_id, sec, cnt)
 end
 --#endregion
 
@@ -218,33 +235,59 @@ local org_dominance_setup = tasks_dominance.setup_dominance_task
 --* max = 7500
 local org_recover_item_on_corpse_setup = tasks_recover_item_on_corpse.on_descr
 
+local function org_rioc_postpone(x)
+    local news_caption = ''
+    local news_icon = 'ui_pda2_mtask_overlay'
+    local news_text = game.translate_string("st_location") .. " " .. game.translate_string(x)
+    db.actor:give_talk_message2(news_caption, news_text, news_icon, "iconed_answer_item")
+    return true
+end
+
 function tasks_recover_item_on_corpse.on_descr(a,b,c)
     newline()
 dbg_print("RIOC")
+
     org_recover_item_on_corpse_setup(a,b,c)
 
     local task_id = c[1]
     if not task_id then return end
 
-	local function postpone_for_next_frame(x)
-        dbg_print("x = %s", x)
-        local min, max = utils.ym_get_rioc_reward(task_id)
+	if not utils.is_pda_taskboard_active() then
+		-- Removes default time event, which prevents printing of default quest info
+		RemoveTimeEvent(0,"on_desxr_rioc") 
+	end
 
-        local news_caption = utils.ym_get_reward_caption()
-		local news_icon = utils.ym_get_reward_icon()
-		local news_text = utils.format_reward_string(min, max)
+	-- local function postpone_for_next_frame(x)
+    --     dbg_print("x = %s", x)
+    --     local min, max = utils.ym_get_rioc_reward(task_id)
+
+    --     local news_caption = utils.ym_get_reward_caption()
+	-- 	local news_icon = utils.ym_get_reward_icon()
+	-- 	local news_text = utils.format_reward_string(min, max)
 
 
-        if  utils.is_pda_taskboard_active then 
-            -- cache_task_text( news_caption, news_text)
-            return true
-        end
+    --     if  utils.is_pda_taskboard_active then 
+    --         -- cache_task_text( news_caption, news_text)
+    --         return true
+    --     end
 
         
-		db.actor:give_talk_message2(news_caption, news_text, news_icon, "iconed_answer_item")
-		return true
-	end
-	CreateTimeEvent(2,"on_descr_rioc",0,postpone_for_next_frame, utils_data.read_from_ini(task_manager.task_ini,c[1],'level_name','string'))
+	-- 	db.actor:give_talk_message2(news_caption, news_text, news_icon, "iconed_answer_item")
+	-- 	return true
+	-- end
+
+    local function postpone(x)
+
+        if (utils.is_pda_taskboard_active()) or (not utils.is_supported_task(task_id)) then
+            dbg_print("RIOC not supported")
+            -- cache_task_text(task_id, news_caption, news_text)
+            org_rioc_postpone(x)
+            return true
+        end
+        return utils.generic_postpone(task_id)
+    end
+        
+	CreateTimeEvent(0,"on_descr_rioc",0,postpone, utils_data.read_from_ini(task_manager.task_ini,c[1],'level_name','string'))
 end
 --#endregion
 
@@ -312,23 +355,34 @@ function tasks_measure.setup_measure_task(actor, npc, p)
     end
 
     local task_id = p[1]
-    local function postpone(task_id)
+    local org_postpone = tasks_measure.postpone_for_next_frame
+    -- local function postpone(task_id)
+    --     if (utils.is_pda_taskboard_active()) or (not utils.is_supported_task(task_id)) then
+    --         -- dbg_print("Not a supported task")
+    --         return true
+    --     end
+
+    --     local min,max = utils.calc_reward_money(task_id)
+
+    --     local news_caption = utils.ym_get_reward_caption()
+    --     local news_text = utils.format_reward_string(min, max)
+    --     local news_icon = utils.ym_get_reward_icon()
+    --     db.actor:give_talk_message2(news_caption, news_text, news_icon, "iconed_answer_item")
+
+    --     return true
+    -- end
+
+	local level_target = alife():level_name(game_graph():vertex(se_target.m_game_vertex_id):level_id())
+    local function postpone(task_id, level_target)
         if (utils.is_pda_taskboard_active()) or (not utils.is_supported_task(task_id)) then
-            -- dbg_print("Not a supported task")
+            -- cache_task_text(task_id, news_caption, news_text)
+            org_postpone(task_id, level_target)
             return true
         end
 
-        local min,max = utils.calc_reward_money(task_id)
-
-        local news_caption = utils.ym_get_reward_caption()
-        local news_text = utils.format_reward_string(min, max)
-        local news_icon = utils.ym_get_reward_icon()
-        db.actor:give_talk_message2(news_caption, news_text, news_icon, "iconed_answer_item")
-
-        return true
+        return utils.generic_postpone(task_id)
     end
-
-	CreateTimeEvent(2,"setup_measure_task",0,postpone,task_id)
+	CreateTimeEvent(0,"setup_measure_task",0,postpone,task_id, level_target)
 end
 --#endregion
 
