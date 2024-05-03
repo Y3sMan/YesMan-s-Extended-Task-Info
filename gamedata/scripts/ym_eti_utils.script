@@ -7,6 +7,8 @@ local function dbg_print(msg,...)
 		--exec_console_cmd("flush")
 end
 
+ym_cached_tasks = {}
+
 local parse_keys = utils_data.parse_string_keys
 local gc = game.translate_string
 local grn_text       = utils_xml.get_color("pda_green")
@@ -50,8 +52,17 @@ function concat_caption_with_text(caption, text)
     return (caption ~= "" and "\\n \\n" .. caption .. "\\n" .. text) or "\\n \\n" .. text
 end
 
+ym_cached_tasks_text = {}
+if z_extended_task_info then
+    ym_cached_tasks_text = z_extended_task_info.cached_tasks_text
+end
+
 function cache_task_text(task_id, news_caption, news_text)
-    cached_tasks_text[task_id] = concat_caption_with_text(news_caption, news_text)
+    if news_caption ~= "" then
+        ym_cached_tasks_text[task_id] = concat_caption_with_text(news_caption, news_text)
+    else
+        ym_cached_tasks_text[task_id] = news_text
+    end
 end
 
 
