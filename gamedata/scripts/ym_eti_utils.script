@@ -328,6 +328,10 @@ dbg_print("get_random_money_by_dist_arg")
     return  min_reward, max_reward
 end
 
+function ym_get_rioc_reward(task_id)
+    return 5000, 7500
+end
+
 -- Parses the on_complete condition list for the reward multiplier argument 
 function get_fetch_reward_and_remove_multiplier(task_id)
     local multi = 1
