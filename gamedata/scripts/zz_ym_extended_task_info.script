@@ -169,7 +169,16 @@ function tasks_agent_rescue.setup_spy_task(actor,npc, p)
 	end
 	local task_id = p[1]
 
+    newline()
+    dbg_print("RESCUE")
     org_rescue_setup(actor, npc, p)
+
+
+	if not utils.is_pda_taskboard_active() then
+		-- Removes default time event, which prevents printing of default quest info
+		-- RemoveTimeEvent(0,"on_init_delivery_task") 
+		RemoveTimeEvent(2,"setup_spy_task") 
+	end
 
     CreateTimeEvent(2,"setup_spy_task",0,utils.generic_postpone,task_id)
 end
@@ -178,10 +187,10 @@ end
 
 -- TODO: Test ASSAULT 
 --#region ASSAULT   
-local org_assault_setup = tasks_assault.setup_assault_task
-function tasks_assault.setup_assault_task(actor, npc, p)
+local org_assault_setup = xr_effects.setup_assault_task
+function xr_effects.setup_assault_task(actor, npc, p)
     newline()
-dbg_print("SETUP_ASSAULT_TASK init")
+    dbg_print("SETUP_ASSAULT_TASK init")
 	if not (p and p[1]) then
 		return false
 	end
@@ -191,7 +200,7 @@ dbg_print("SETUP_ASSAULT_TASK init")
     org_assault_setup(actor, npc, p)
 
     if not utils.is_pda_taskboard_active then 
-		RemoveTimeEvent(0,"setup_assault_task") 
+		RemoveTimeEvent(2,"setup_assault_task") 
     end
 
     CreateTimeEvent(2,"setup_assault_task",0,utils.generic_postpone,task_id)
@@ -201,8 +210,18 @@ end
 --// TODO: Test BOUNTY
 
 --#region BOUNTY
-local org_bounty_setup = tasks_bounty.setup_bounty_task
-function tasks_bounty.setup_bounty_task(actor, npc, p)
+local org_bounty_setup = xr_effects.setup_bounty_task
+local org_bounty_postpone = function(task_id, target_id)
+    local news_caption = game.translate_string(task_manager.task_ini:r_string_ex(p[1], "title")) or "error"
+    local news_text = game.translate_string("st_mm_new_game_name") .. " " .. se_target:character_name() .. "\\n " .. game.translate_string("st_mm_new_game_faction_2") .. " " .. game.translate_string(se_target:community()) .. "\\n " .. game.translate_string("st_location") .. " " .. game.translate_string(level_target)
+    db.actor:give_talk_message2(news_caption, news_text, se_target:character_icon(), "iconed_answer_item")
+    return true
+end
+
+function xr_effects.setup_bounty_task(actor, npc, p)
+-- function tasks_bounty.setup_bounty_task(actor, npc, p)
+    newline()
+    dbg_print("BOUNTY")
     org_bounty_setup(actor, npc, p)
 
     local task_id = p[1]
@@ -210,7 +229,7 @@ function tasks_bounty.setup_bounty_task(actor, npc, p)
 
 	if not utils.is_pda_taskboard_active() then
 		-- Removes default time event, which prevents printing of default quest info
-		RemoveTimeEvent(0,"setup_bounty_task") 
+		RemoveTimeEvent(2,"setup_bounty_task") 
 	end
 
 	-- if is_pda_taskboard_active() then return end
@@ -245,7 +264,7 @@ end
 
 function tasks_recover_item_on_corpse.on_descr(a,b,c)
     newline()
-dbg_print("RIOC")
+    dbg_print("RIOC")
 
     org_recover_item_on_corpse_setup(a,b,c)
 
@@ -254,7 +273,7 @@ dbg_print("RIOC")
 
 	if not utils.is_pda_taskboard_active() then
 		-- Removes default time event, which prevents printing of default quest info
-		RemoveTimeEvent(0,"on_desxr_rioc") 
+		RemoveTimeEvent(2,"on_desxr_rioc") 
 	end
 
 	-- local function postpone_for_next_frame(x)
@@ -286,17 +305,21 @@ dbg_print("RIOC")
         end
         return utils.generic_postpone(task_id)
     end
-        
-	CreateTimeEvent(0,"on_descr_rioc",0,postpone, utils_data.read_from_ini(task_manager.task_ini,c[1],'level_name','string'))
+
+	CreateTimeEvent(2,"on_descr_rioc",0,postpone, utils_data.read_from_ini(task_manager.task_ini,c[1],'level_name','string'))
 end
 --#endregion
 
 -- TODO: Test SEARCH
 --#region SEARCH STASH
-local org_stash_setup = tasks_stash.drx_sl_create_quest_stash
-xr_effects.drx_sl_create_quest_stash = function( actor, npc, p )
+local org_stash_setup = xr_effects.drx_sl_create_quest_stash
+function xr_effects.drx_sl_create_quest_stash( actor, npc, p )
 	if not (p and p[1] and p[2]) then
 		return
+	end
+	if not utils.is_pda_taskboard_active() then
+		-- Removes default time event, which prevents printing of default quest info
+		RemoveTimeEvent(2,"setup_bounty_task") 
 	end
 
     if not org_stash_setup then return end
@@ -323,10 +346,10 @@ end
 local original_on_init_delivery_task = xr_effects.on_init_delivery_task
 function xr_effects.on_init_delivery_task(actor,npc,p)
     newline()
-dbg_print("ON_INIT_DELIVERY_TASK")
+    dbg_print("ON_INIT_DELIVERY_TASK")
 	original_on_init_delivery_task(actor,npc,p)
 	
-		
+	
 	local task_id = p[1]
     if not task_id then return end
 
@@ -354,6 +377,14 @@ function tasks_measure.setup_measure_task(actor, npc, p)
 
     local task_id = p[1]
     local org_postpone = tasks_measure.postpone_for_next_frame
+
+
+	if not utils.is_pda_taskboard_active() then
+		-- Removes default time event, which prevents printing of default quest info
+		-- RemoveTimeEvent(0,"on_init_delivery_task") 
+		RemoveTimeEvent(2,"setup_measure_task") 
+	end
+
     -- local function postpone(task_id)
     --     if (utils.is_pda_taskboard_active()) or (not utils.is_supported_task(task_id)) then
     --         -- dbg_print("Not a supported task")
@@ -377,10 +408,10 @@ function tasks_measure.setup_measure_task(actor, npc, p)
             org_postpone(task_id, level_target)
             return true
         end
-
+        
         return utils.generic_postpone(task_id)
     end
-	CreateTimeEvent(0,"setup_measure_task",0,postpone,task_id, level_target)
+	CreateTimeEvent(2,"setup_measure_task",0,postpone,task_id, level_target)
 end
 --#endregion
 
