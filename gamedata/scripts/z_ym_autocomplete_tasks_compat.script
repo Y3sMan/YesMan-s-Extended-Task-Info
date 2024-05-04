@@ -103,8 +103,47 @@ if ym_eti_utils and z_autocomplete_tasks_core then
         return parse_keys(s, tbl_keys)
     end
 
-        -- end
+    function ym_setup_reward_items_info(task_id)
+        if (not isATEnabled) or (not isCompensate) then
+            return 0, 0 
+        end
 
+        local s = ym_utils.ym_list_reward_items(task_id)
+        dbg_print("s = %s", s)
+
+        local min_comp, max_comp = ym_reward_item_compensation(task_id)
+        ym_utils.ym_set_reward_caption("Reward (with item compensation):")
+
+        local tbl_keys = {
+            ["min_compensation"] = min_comp,
+            ["grn_text"] = grn_text,
+            ["max_compensation"] = max_comp,
+            ["clr_text"] = clr_txt,
+        }
+
+        local org_min  = ym_utils.ym_get_reward_text_min()
+        org_min = org_min .. " (+%$grn_text$min_compensation%$clr_text)"
+        local s        = parse_keys(org_min, tbl_keys)
+        ym_utils.ym_set_reward_text_min(s)
+
+        local org_max = ym_utils.ym_get_reward_text_max()
+        org_max = org_max .. " (+%$grn_text$max_compensation%$clr_text)"
+        s = parse_keys(org_max, tbl_keys)
+        ym_utils.ym_set_reward_text_max(s)
+        -- save_var(db.actor, (task_id .. "_ym_reward_caption"), "Reward (with item compensation):")
+
+        return 0, 0
+    end
+
+    -- override format string
+    local function override()
+        if (isATEnabled and isCompensate) then
+            -- local org_format_string = ym_utils.format_reward_string
+            -- function ym_eti_utils.format_reward_string(min_cost, max_cost)
+            --     local org_reward_s = org_format_string(min_cost, max_cost)
+
+            -- end
+            
             -- local org_combined_cap_and_reward = ym_utils.combined_caption_and_reward
             -- function ym_eti_utils.combined_caption_and_reward(min, max, task_id)
             --     if not ym_utils.ym_does_task_have_reward_item(task_id) then return org_combined_cap_and_reward(min, max, task_id) end
