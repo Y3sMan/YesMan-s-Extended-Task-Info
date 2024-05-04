@@ -856,9 +856,15 @@ function calc_reward_money(task_id)
     local lowest_reward, highest_reward = 0, 0
 
     for key,f in pairs(supported_tasks_funcs) do 
+        -- if (type(f) == "table") then
+        --     f = f[1]
+        -- end
+
         if string.find(s, tostring(key)) then
             dbg_print("key = %s", key)
-            local min, max = f(task_id)
+
+            local function func(fnc, task_id)
+                local min, max = fnc(task_id)
             if min then dbg_print("min = %s", min) end
             if max then dbg_print("max = %s", max) end
 
@@ -867,6 +873,15 @@ function calc_reward_money(task_id)
 
             dbg_print("lowest_reward now = %s", lowest_reward)
             dbg_print("highest_reward now = %s", highest_reward)
+            end
+
+            if type(f) == "table" then
+                for j,k in pairs(f) do
+                    func(k, task_id)
+                end
+            else
+                func(f, task_id)
+            end
         end
     end
     
@@ -899,28 +914,37 @@ function aggregate_reward_caption(task_id)
     return caption
 end
 
-function aggregate_reward_text(task_id, min, max)
-    local on_comp = get_on_comp_condlist(task_id)
-    local s = tostring(table_dump(on_comp))
-    local text = ""
+-- end
+-- for PDA TASKBOARD compatibility
+-- FIXME: new patch methods not working here
+function combined_caption_and_reward(min_reward, max_reward, task_id)
+    task_id = task_id or nil
+    -- local caption  = load_var(db.actor, (task_id .. "_ym_reward_caption")) or ym_get_reward_caption()
 
-    if ( (type(max_cost) == "number") and (  max_cost > 0 )) then 
-        max_s = gc("ym_ui_reward_max")
-    end
-
-    local min_max_s  = min_s .. "\\n" .. max_s
-    -- if is_pda_taskboard_active() then
-    local reward_total   = ""
-    -- reward_total = parse_keys(reward_caption .. min_max_s,
     local tbl_keys       = {
-        ["min"] = min_cost,
-        ["max"] = max_cost,
+        ["min"] = min_reward,
+        ["max"] = max_reward,
         ["grn_text"] = grn_text,
         ["new_line"] = "\\n",
         ["clr_number"] = clr_txt,
         ["clr_text"] = clr_txt,
         ["ylw_text"] = ylw_text,
     }
+
+    -- local s = parse_keys(reward_caption .. "\\n" .. format_reward_string(min_reward, max_reward), tbl_keys)
+    local cap = ym_get_reward_caption()
+    local min_max = parse_keys(format_reward_string(min_reward, max_reward), tbl_keys)
+    local s = cap .. "\\n" .. min_max
+    newline()
+    dbg_print("COMBINED_CAPTION_AND_REWARD")
+    dbg_print("result = %s" , s)
+    -- dbg_print("caption = %s", caption)
+    return s
+end
+
+-- function extend_news_text(old_text, new_text)
+--     return ""
+-- end
 
 function generic_postpone(task_id)
     if not task_id then return end
