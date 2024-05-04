@@ -650,8 +650,41 @@ function ym_parse_reward_text(min, max)
     return parse_keys(ym_generic_reward_text(), tbl_keys)
 end
 
+function ym_list_reward_items(task_id)
+    newline()
+    dbg_print("YM_LIST_REWARD_ITEMS")
+
+    local tbl = ym_get_reward_item_arg(task_id)
+    if not tbl then return "" end
+
+    local s = ""
+    for k,v in pairs(tbl) do
+        dbg_print("k, v, name = %s, %s, %s", k,v, get_sec_name(v))        
+        if s ~= "" then 
+            s = s .. ", " .. tostring(get_sec_name(v))
+        else
+            s = tostring(get_sec_name(v))
+        end
+    end
+    return s
+end
+
+function ym_msg_reward_items_setup(task_id)
+    newline()
+    dbg_print("YM_MSG_REWARD_ITEMS_SETUP")
+
+    local s = ym_list_reward_items(task_id)
+    local news_caption = "Potential Item Rewards:"
+    local news_text = s
+    local news_icon = ym_get_reward_icon()
+    
+    db.actor:give_talk_message2(news_caption, news_text, news_icon, "iconed_answer_item")
+    
+    return 0, 0
+end
 
 
+--#endregion
 
 
 --#region =====COMPATIBILITY SECTION===============================================================================================================================================
@@ -660,11 +693,15 @@ end
 -- The commas narrow down results so similar function names don't trigger in redudant spots
 -- or in false-positive instances
 local supported_tasks_funcs = {
-    [ "fetch_reward_and_remove," ] = ym_get_fetch_reward,
+    [ "fetch_reward_and_remove," ] =  ym_get_fetch_reward,
     [ "reward_random_money," ] = ym_get_random_money_rewards,
-    [ "reward_random_money_by_dist" ] = ym_get_random_money_by_dist_rewards,
-    [ "reward_money," ] =  ym_get_static_money_reward
+    [ "reward_random_money_by_dist" ] = ym_get_random_money_by_dist_rewards ,
+    [ "reward_money," ] =  ym_get_static_money_reward, 
+    [ "tasks_recover_item_on_corpse,[2] = reward,"] = ym_get_rioc_reward, 
+    [ "reward_item,"] = ym_msg_reward_items_setup,
+    [ "reward_random_item,"] = ym_msg_reward_items_setup,
 }
+
 
 --#region
 --[==[
