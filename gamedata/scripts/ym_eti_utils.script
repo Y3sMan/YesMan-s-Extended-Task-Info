@@ -865,14 +865,14 @@ function calc_reward_money(task_id)
 
             local function func(fnc, task_id)
                 local min, max = fnc(task_id)
-            if min then dbg_print("min = %s", min) end
-            if max then dbg_print("max = %s", max) end
+                if min then dbg_print("min = %s", min) end
+                if max then dbg_print("max = %s", max) end
 
-            lowest_reward = lowest_reward + min
-            highest_reward = highest_reward + max
+                lowest_reward = lowest_reward + min
+                highest_reward = highest_reward + max
 
-            dbg_print("lowest_reward now = %s", lowest_reward)
-            dbg_print("highest_reward now = %s", highest_reward)
+                dbg_print("lowest_reward now = %s", lowest_reward)
+                dbg_print("highest_reward now = %s", highest_reward)
             end
 
             if type(f) == "table" then
@@ -884,36 +884,51 @@ function calc_reward_money(task_id)
             end
         end
     end
-    
+
     return lowest_reward, highest_reward
 end
 
-function aggregate_reward_caption(task_id)
-    local on_comp = get_on_comp_condlist(task_id)
-    local s = tostring(table_dump(on_comp))
-    local caption = ""
+-- function aggregate_reward_caption(task_id)
+--     local on_comp = get_on_comp_condlist(task_id)
+--     local s = tostring(table_dump(on_comp))
+--     local caption = ""
 
-    for key,tbl_func in pairs(supported_tasks_funcs) do 
-        local f = nil
-        if (type(tbl_func) == "table") then
-            f = tbl_func[2]
-        end
-        if not f then 
-            goto continue
-        end
+--     for key,tbl_func in pairs(supported_tasks_funcs) do 
+--         local f = nil
+--         if (type(tbl_func) == "table") then
+--             f = tbl_func[2]
+--         end
+--         if not f then 
+--             goto continue
+--         end
 
-        local new_cap = f()
+--         local new_cap = f()
 
-        if (string.find(s, tostring(key)) and (caption ~= new_cap)) then
-            dbg_print("key = %s", key)
-            caption = caption + new_cap
-        end
+--         if (string.find(s, tostring(key)) and (caption ~= new_cap)) then
+--             dbg_print("key = %s", key)
+--             caption = caption + new_cap
+--         end
 
-        ::continue::
-    end
-    return caption
-end
+--         ::continue::
+--     end
+--     return caption
+-- end
 
+-- function aggregate_reward_text(task_id, min, max)
+--     local on_comp = get_on_comp_condlist(task_id)
+--     local s = tostring(table_dump(on_comp))
+--     local text = ""
+
+--     for key,f in pairs(supported_tasks_funcs) do 
+--         if (type(f) == "table") then
+--             f = f[3]
+--         end
+--         if string.find(s, tostring(key)) then
+--             dbg_print("key = %s", key)
+--             text = text .. f(task_id, min, max)
+--         end
+--     end
+--     return text
 -- end
 -- for PDA TASKBOARD compatibility
 -- FIXME: new patch methods not working here
