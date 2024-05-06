@@ -122,13 +122,18 @@ if ym_eti_utils and z_autocomplete_tasks_core then
         }
 
         local org_min  = ym_utils.ym_get_reward_text_min()
-        org_min = org_min .. " (+%$grn_text$min_compensation%$clr_text)"
+        local new_min = gc("st_ym_eti_at_min_compensation")
+        org_min = org_min .. new_min
         local s        = parse_keys(org_min, tbl_keys)
+        dbg_print("new min text = %s",s)
         ym_utils.ym_set_reward_text_min(s)
 
+        -- Then edit the "Max" line
         local org_max = ym_utils.ym_get_reward_text_max()
-        org_max = org_max .. " (+%$grn_text$max_compensation%$clr_text)"
+        local new_max = gc("st_ym_eti_at_max_compensation")
+        org_max = org_max .. new_max 
         s = parse_keys(org_max, tbl_keys)
+        dbg_print("new max text = %s",s)
         ym_utils.ym_set_reward_text_max(s)
         -- save_var(db.actor, (task_id .. "_ym_reward_caption"), "Reward (with item compensation):")
 

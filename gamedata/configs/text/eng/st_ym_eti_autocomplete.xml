@@ -1,0 +1,10 @@
+
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+	<string id="st_ym_eti_at_min_compensation" >
+		<text> (+%$grn_text$min_compensation%$clr_text)</text>
+	</string>
+	<string id="st_ym_eti_at_min_compensation">
+		<text> (+%$grn_text$max_compensation%$clr_text)</text>
+	</string>
+</string_table>
