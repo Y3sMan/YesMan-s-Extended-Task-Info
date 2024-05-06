@@ -180,8 +180,8 @@ end
 --// TODO: finish the rest of the types of dynamic tasks
 --// TODO: Test RESCUE
 --#region RESCUE AGENT
-local org_rescue_setup = tasks_agent_rescue.setup_spy_task
-function tasks_agent_rescue.setup_spy_task(actor,npc, p)
+local org_rescue_setup = xr_effects.setup_spy_task
+function xr_effects.setup_spy_task(actor,npc, p)
 	if not (p and p[1]) then
 		return false
 	end
@@ -384,8 +384,8 @@ end
 
 -- TODO: Test MEASURE
 --#region MEASURE tasks
-local org_measure_setup = tasks_measure.setup_measure_task
-function tasks_measure.setup_measure_task(actor, npc, p)
+local org_measure_setup = xr_effects.setup_measure_task
+function xr_effects.setup_measure_task(actor, npc, p)
     org_measure_setup(actor, npc, p)
 
 	if not (p and p[1]) then
@@ -394,7 +394,7 @@ function tasks_measure.setup_measure_task(actor, npc, p)
     end
 
     local task_id = p[1]
-    local org_postpone = tasks_measure.postpone_for_next_frame
+    -- local org_postpone = tasks_measure.postpone_for_next_frame
 
 
 	if not utils.is_pda_taskboard_active() then
@@ -419,17 +419,17 @@ function tasks_measure.setup_measure_task(actor, npc, p)
     --     return true
     -- end
 
-	local level_target = alife():level_name(game_graph():vertex(se_target.m_game_vertex_id):level_id())
-    local function postpone(task_id, level_target)
-        if (utils.is_pda_taskboard_active()) or (not utils.is_supported_task(task_id)) then
-            -- cache_task_text(task_id, news_caption, news_text)
-            org_postpone(task_id, level_target)
-            return true
-        end
+	-- local level_target = alife():level_name(game_graph():vertex(se_target.m_game_vertex_id):level_id())
+    -- local function postpone(task_id, level_target)
+    --     if (utils.is_pda_taskboard_active()) or (not utils.is_supported_task(task_id)) then
+    --         -- cache_task_text(task_id, news_caption, news_text)
+    --         org_postpone(task_id, level_target)
+    --         return true
+    --     end
         
-        return utils.generic_postpone(task_id)
-    end
-	CreateTimeEvent(2,"setup_measure_task",0,postpone,task_id, level_target)
+    --     return utils.generic_postpone(task_id)
+    -- end
+	CreateTimeEvent(2,"setup_measure_task",0,utils.generic_postpone,task_id)
 end
 --#endregion
 
@@ -476,12 +476,21 @@ if ui_pda_taskboard_tab then
         end
 
         if result then
-            local reward_s = utils.combined_caption_and_reward(min_cost, max_cost, task_id) or ""
-            local final_s = result .. "\\n" .. reward_s
+            -- local reward_s = utils.combined_caption_and_reward(min_cost, max_cost, task_id) or ""
+            local cap = utils.ym_get_reward_caption()
+            local news_text = utils.ym_get_reward_text()
+            local tbl_keys  = utils.get_generic_tbl_keys()
+            tbl_keys["min"] = min_cost
+            tbl_keys["max"] = max_cost 
+
+            news_text = parse_keys(news_text, tbl_keys)
+
+            local final_s = utils.concatenate_with_newline(result, cap, news_text)
 
             utils.cache_task_text(task_id, "", final_s)
             return  final_s
         end
+
         return org_get_fetch_task_descr(task_id)
     end
 end
