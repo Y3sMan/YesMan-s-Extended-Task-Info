@@ -54,6 +54,21 @@ function concat_caption_with_text(caption, text)
     return (caption ~= "" and "\\n \\n" .. caption .. "\\n" .. text) or "\\n \\n" .. text
 end
 
+function concatenate_with_newline(...)
+    local args = {...}
+    local result = ""
+
+    for i, str in ipairs(args) do
+        result = result .. str
+        if i < #args then
+            result = result .. "\\n"
+        end
+    end
+
+    return result
+end
+
+
 ym_cached_tasks_text = {}
 if z_extended_task_info then
     ym_cached_tasks_text = z_extended_task_info.cached_tasks_text
@@ -131,7 +146,6 @@ function ym_does_task_have_reward_item(task_id)
             else
                 if (string.find(tostring(v), "reward_item") or string.find(tostring(v), "reward_random_item")) then
                     dbg_print("found reward_item or reward_random_item at key = %s", k)
-                    reward_itms_tbl = tbl[3]
                     -- dbg_print("reward_item table = " .. tostring(table_dump(tbl[k+2])))
 
                     breakFlag = true
@@ -143,8 +157,8 @@ function ym_does_task_have_reward_item(task_id)
         return false
     end
 
-    local haveRewards = deepprint(condlist)
-    return haveRewards
+    deepprint(condlist)
+    return breakFlag 
 end
 
 --#region =REWARD CALCULATIONS=================================================================================================================================================================================================================================================
@@ -509,6 +523,17 @@ end
 
 --#region text formatting
 
+function get_generic_tbl_keys()
+    return {
+        ["grn_text"] = grn_text,
+        ["new_line"] = "\\n",
+        ["clr_number"] = clr_txt,
+        ["clr_text"] = clr_txt,
+        ["ylw_text"] = ylw_text,
+    }
+
+end
+
 function ym_set_reward_text_min(new_txt)
     reward_text_min = new_txt
 end
@@ -524,6 +549,10 @@ end
 
 function ym_get_reward_text_max()
     return reward_text_max
+end
+
+function ym_get_reward_text()
+    return ym_get_reward_text_min() .. "\\n" .. ym_get_reward_text_max()
 end
 
 function ym_get_parsed_reward_text_min(min)
@@ -864,12 +893,18 @@ function calc_reward_money(task_id)
             dbg_print("key = %s", key)
 
             local function func(fnc, task_id)
+                dbg_print("fnc = %s", fnc)
+
                 local min, max = fnc(task_id)
                 if min then dbg_print("min = %s", min) end
                 if max then dbg_print("max = %s", max) end
 
-                lowest_reward = lowest_reward + min
-                highest_reward = highest_reward + max
+                if min then
+                    lowest_reward = lowest_reward + min 
+                end
+                if max then
+                    highest_reward = highest_reward + max 
+                end
 
                 dbg_print("lowest_reward now = %s", lowest_reward)
                 dbg_print("highest_reward now = %s", highest_reward)
@@ -1004,21 +1039,22 @@ function generic_postpone(task_id)
 
 
     local min,max = calc_reward_money(task_id)
+    if (min == 0 and max == 0)then
+        ym_reset_reward_text()
+        return true 
+    end
     -- reward_caption = ym_get_reward_caption()
     local news_caption = ym_get_reward_caption()
     -- local news_caption = load_var(db.actor, (task_id .. "_ym_reward_caption"))
     -- local news_caption = aggregate_reward_caption(task_id)
     -- local news_text = format_reward_string(min,max)
     local s_min = ym_get_reward_text_min()
-    local tbl_keys       = {
-        ["min"] = min,
-        ["max"] = max,
-        ["grn_text"] = grn_text,
-        ["new_line"] = "\\n",
-        ["clr_number"] = clr_txt,
-        ["clr_text"] = clr_txt,
-        ["ylw_text"] = ylw_text,
-    }
+
+
+    local tbl_keys = get_generic_tbl_keys()
+    tbl_keys["min"] = min
+    tbl_keys["max"] = max
+
     s_min = parse_keys(s_min, tbl_keys)
 
     local s_max = ym_get_reward_text_max()
