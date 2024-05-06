@@ -49,6 +49,7 @@ if ym_eti_utils and z_autocomplete_tasks_core then
     end
 
     imports()
+    local _AT_task_cache = {}
 
     function ym_reward_item_compensation(task_id)
         if not task_id then return end
@@ -122,6 +123,32 @@ if ym_eti_utils and z_autocomplete_tasks_core then
 
     function ym_setup_reward_items_info(task_id)
         imports()
+
+        -- Check if this task has been worked on
+        -- if not, continue
+        -- FIXME: Check that the same task_id, after being refreshed, correctly gets processed
+        if not _AT_task_cache[task_id] then
+            -- Check if task is defined in the task manager
+            local parsed_data = utils_data.parse_ini_section_to_array(task_manager.task_ini, task_id)
+            -- if not parsed_data then
+                -- dbg_print("Unable to autocomplete task: %s", task_id)
+            -- end
+
+            -- Add task to cache
+            _AT_task_cache[task_id] = parsed_data or {}
+        else
+            return 0, 0
+        end
+
+        -- if load_var(db.actor, (task_id .. "_at_compensate")) or (load_var(db.actor, (task_id .. "_at_compensate")) == false )  then
+        --     return 0, 0
+        -- end
+        -- if true then return  end
+
+        -- If Autocomplete is disabled
+        -- If item compensation is disabled
+        -- or the task does not even have a reward_item or reward_random_item function
+        if ((not isATEnabled) or (not isCompensate) or (not can_autocomplete(task_id)) or not ym_utils.ym_does_task_have_reward_item(task_id)) then
             return 0, 0 
         end
 
@@ -255,6 +282,12 @@ if ym_eti_utils and z_autocomplete_tasks_core then
     add_task_func("reward_item,", { ym_setup_reward_items_info , org_rwd_func })
     add_task_func("reward_random_item,", { ym_setup_reward_items_info, org_rwd_func })
 
+    -- Add support for all kinds of tasks that may reward the player in multiple different methods
+    add_task_func("fetch_reward_and_remove,", { ym_setup_reward_items_info , funcs["fetch_reward_and_remove,"] })
+    add_task_func("reward_random_money,", { ym_setup_reward_items_info, funcs["reward_random_money,"] })
+    add_task_func("reward_random_money_by_dist", { ym_setup_reward_items_info, funcs["reward_random_money_by_dist"] })
+    add_task_func("reward_money,", { ym_setup_reward_items_info , funcs["reward_money,"] })
+    add_task_func("tasks_recover_item_on_corpse,[2] = reward,", { ym_setup_reward_items_info, funcs["tasks_recover_item_on_corpse,[2] = reward,"] })
 
 
     -- function on_game_start()
