@@ -13,9 +13,6 @@ end
 
 local gc = game.translate_string
 local ym_utils = ym_eti_utils
-local grn_text       = utils_xml.get_color("pda_green")
-local ylw_text       = utils_xml.get_color("pda_yellow")
-local clr_txt        = utils_xml.get_color("pda_white")
 local parse_keys   = utils_data.parse_string_keys
 
 
@@ -102,10 +99,6 @@ if ym_eti_utils and z_autocomplete_tasks_core then
         if not task_id then return end
         imports()
 
-
-        -- if ym_utils.cached_tasks_text[task_id] then return ym_utils.cached_tasks_text[task_id] end
-
-
         -- if compenstation is not enabled in AT, then return 0,0; this will not add to the sum rewards
         if (not isATEnabled) or (not isCompensate) then
             return 0, 0 
@@ -158,9 +151,6 @@ if ym_eti_utils and z_autocomplete_tasks_core then
         if not _AT_task_cache[task_id] then
             -- Check if task is defined in the task manager
             local parsed_data = utils_data.parse_ini_section_to_array(task_manager.task_ini, task_id)
-            -- if not parsed_data then
-                -- dbg_print("Unable to autocomplete task: %s", task_id)
-            -- end
 
             -- Add task to cache
             _AT_task_cache[task_id] = parsed_data or {}
@@ -168,10 +158,6 @@ if ym_eti_utils and z_autocomplete_tasks_core then
             return 0, 0
         end
 
-        -- if load_var(db.actor, (task_id .. "_at_compensate")) or (load_var(db.actor, (task_id .. "_at_compensate")) == false )  then
-        --     return 0, 0
-        -- end
-        -- if true then return  end
 
         -- If Autocomplete is disabled
         -- If item compensation is disabled
@@ -208,102 +194,10 @@ if ym_eti_utils and z_autocomplete_tasks_core then
         s = parse_keys(org_max, tbl_keys)
         dbg_print("new max text = %s",s)
         ym_utils.ym_set_reward_text_max(s)
-        -- save_var(db.actor, (task_id .. "_ym_reward_caption"), "Reward (with item compensation):")
-
-        -- save_var(db.actor, (task_id .. "_at_compensate"), true)
 
         return 0, 0
     end
 
-    -- override format string
-    local function override()
-        if (isATEnabled and isCompensate) then
-            -- local org_format_string = ym_utils.format_reward_string
-            -- function ym_eti_utils.format_reward_string(min_cost, max_cost)
-            --     local org_reward_s = org_format_string(min_cost, max_cost)
-
-            -- end
-            
-            -- local org_combined_cap_and_reward = ym_utils.combined_caption_and_reward
-            -- function ym_eti_utils.combined_caption_and_reward(min, max, task_id)
-            --     if not ym_utils.ym_does_task_have_reward_item(task_id) then return org_combined_cap_and_reward(min, max, task_id) end
-
-            --     ym_utils.ym_reset_reward_caption()
-            --     local org_cap = ym_utils.ym_get_reward_caption()
-            --     if (string.find(org_cap, " (with item compensation)")) then
-                    
-            --     end
-            --     local new_cap = org_cap .. " (with item compensation)"
-            --     ym_utils.ym_set_reward_caption(new_cap)
-
-            --     return org_combined_cap_and_reward(min, max)
-            -- end
-
-            --#region generic_postpone override
-            local org_postpone = ym_utils.generic_postpone
-            function ym_eti_utils.generic_postpone(task_id)
-                local on_comp = ym_utils.get_on_comp_condlist(task_id)
-                local s = ym_utils.table_dump(on_comp)
-                if (string.find(s, "reward_item") or string.find(s, "reward_random_item")) then
-                    local min_compensation, max_compensation = ym_reward_item_compensation(task_id)
-                    if (min_compensation and max_compensation) then
-                        
-                        local cap = ym_utils.ym_get_reward_caption()
-                        local min, max = ym_utils.calc_reward_money(task_id)
-                        local news_caption = load_var(db.actor, (task_id .. "_ym_reward_caption")) or cap
-
-                        -- format min/max text
-                        local min_s = gc("ym_ui_reward_min")
-                        local max_s = ""
-
-                        if ((type(max_cost) == "number") and (max_cost > 0)) then
-                            max_s = gc("ym_ui_reward_max")
-                            max_s = max_s .. " (+ %max_compensation)"
-                        end
-
-                        min_s = min_s .. " (+ %min_compensation)"
-
-                        local combined = min_s .. "\\n" .. max_s
-
-                        local grn_text     = utils_xml.get_color("pda_green")
-                        local ylw_text     = utils_xml.get_color("pda_yellow")
-                        local clr_txt      = utils_xml.get_color("pda_white")
-
-                        local reward_total = ""
-                        local tbl_keys     = {
-                            ["min"] = min,
-                            ["max"] = max,
-                            ["grn_text"] = grn_text,
-                            ["new_line"] = "\\n",
-                            ["clr_number"] = clr_txt,
-                            ["clr_text"] = clr_txt,
-                            ["ylw_text"] = ylw_text,
-                        }
-
-                        reward_total = utils_data.parse_string_keys(combined, tbl_keys)
-
-                        -- local news_text    = ym_utils.format_reward_string(min, max)
-                        local news_icon    = "ui_inGame2_Dengi_otdani"
-                        if ym_utils.is_pda_taskboard_active() then
-                            -- cache_task_text(task_id, news_caption, news_text)
-                            return true
-                        end
-
-                        db.actor:give_talk_message2(news_caption, reward_total, news_icon, "iconed_answer_item")
-                        return true
-                    end
-
-                elseif (string.find(s, "fetch_reward_and_remove")) then
-
-                    -- local cap = ym_utils.ym_get_reward_caption()
-                    ym_utils.ym_set_reward_caption("fetch test 2")
-                    return org_postpone(task_id)
-                else
-                    return org_postpone(task_id)
-                end
-            end
-        end
-    end
 
 
     local funcs = ym_utils.ym_get_supported_task_funcs()

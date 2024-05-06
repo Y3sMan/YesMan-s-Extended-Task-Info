@@ -7,11 +7,6 @@ local function dbg_print(msg,...)
 		--exec_console_cmd("flush")
 end
 
--- local function dbg_dump(o)
---     if not ym_debug then return "" end
-
---     return ym_debug.dbg_dump(o)
--- end
 --#endregion
 
 -- #region helper functions
@@ -27,10 +22,6 @@ local utils = ym_eti_utils
 if z_taskboard_overrides then
     dbg_print("PDA TASKBOARD override loaded")
     local pda_taskboard_create_overrides = z_taskboard_overrides.create_overrides
-    -- pda_taskboard_create_overrides()
-    -- function on_game_start()
-    --     RegisterScriptCallback("on_game_load", pda_taskboard_create_overrides)
-    -- end
 end
 
 
@@ -50,29 +41,11 @@ end
 
 -- key = task_id, value = news_text
 
-if z_taskboard_overrides then
-    newline()
-    dbg_print("PDA TASKBOARD override loaded")
-    local tskbrd = z_taskboard_overrides
-    -- local pda_taskboard_create_overrides = tskbrd.create_overrides
-    
-    -- imported from z_taskboard_overrides
-    -- local original_give_talk_message2 = db.actor.give_talk_message2
-    -- db.actor.give_talk_message2 = function (...)
-    --     if ActorMenu.get_pda_menu():IsShown() then
-    --         local _, task_title, task_details, task_icon = ...
-    --         table.insert(tskbrd.tasks_info, {
-    --             task_title = task_title,
-    --             task_details = task_details,
-    --             task_icon = task_icon
-    --         })
-    --     else
-    --         original_give_talk_message2(...)
-    --     end
-
-    -- end
-
-end
+-- if z_taskboard_overrides then
+--     newline()
+--     dbg_print("PDA TASKBOARD override loaded")
+--     local tskbrd = z_taskboard_overrides
+-- end
 
 
 if ui_pda_taskboard_tab and ui_pda_taskboard_tab.clear_cached_data then
@@ -119,27 +92,6 @@ function xr_effects.setup_fetch_task(actor, npc, p)
     if string.find(task_id, "_fetch") then
         task_id = string.sub(task_id, 1, -7) or ""   -- because it ends with fetch
     end
-
-    -- local function postpone(task_id, section, amount)
-    --     if not task_id then return end
-    --     if string.find(task_id, "_fetch") then
-    --         task_id = string.sub(task_id,1,-7) or "" -- because it ends with fetch
-    --     end
-
-    --     if (utils.is_pda_taskboard_active()) or (not utils.is_supported_task(task_id)) then
-    --         dbg_print("Not a supported task")
-    --         -- cache_task_text(task_id, news_caption, news_text)
-    --         org_fetch_postpone(task_id, section, amount)
-    --         return true
-    --     end
-
-    --     local min, max = utils.calc_reward_money(task_id)
-    --     local news_caption = utils.ym_get_reward_caption() or "error"
-    --     local news_text = utils.format_reward_string(min, max)
-
-	-- 	db.actor:give_talk_message2(news_caption, news_text, "utils.ym_get_reward_icon()", "iconed_answer_item")
-    --     return true
-    -- end
 
     local function postpone(task_id, section, amount)
         if (utils.is_pda_taskboard_active()) or (not utils.is_supported_task(task_id)) then
@@ -194,7 +146,6 @@ function xr_effects.setup_spy_task(actor,npc, p)
 
 	if not utils.is_pda_taskboard_active() then
 		-- Removes default time event, which prevents printing of default quest info
-		-- RemoveTimeEvent(0,"on_init_delivery_task") 
 		RemoveTimeEvent(2,"setup_spy_task") 
 	end
 
@@ -229,12 +180,6 @@ end
 
 --#region BOUNTY
 local org_bounty_setup = xr_effects.setup_bounty_task
-local org_bounty_postpone = function(task_id, target_id)
-    local news_caption = game.translate_string(task_manager.task_ini:r_string_ex(p[1], "title")) or "error"
-    local news_text = game.translate_string("st_mm_new_game_name") .. " " .. se_target:character_name() .. "\\n " .. game.translate_string("st_mm_new_game_faction_2") .. " " .. game.translate_string(se_target:community()) .. "\\n " .. game.translate_string("st_location") .. " " .. game.translate_string(level_target)
-    db.actor:give_talk_message2(news_caption, news_text, se_target:character_icon(), "iconed_answer_item")
-    return true
-end
 
 function xr_effects.setup_bounty_task(actor, npc, p)
 -- function tasks_bounty.setup_bounty_task(actor, npc, p)
@@ -249,8 +194,6 @@ function xr_effects.setup_bounty_task(actor, npc, p)
 		-- Removes default time event, which prevents printing of default quest info
 		RemoveTimeEvent(2,"setup_bounty_task") 
 	end
-
-	-- if is_pda_taskboard_active() then return end
 
     
 	CreateTimeEvent(2,"setup_bounty_task",0,utils.generic_postpone,task_id)
@@ -294,25 +237,6 @@ function tasks_recover_item_on_corpse.on_descr(a,b,c)
 		RemoveTimeEvent(2,"on_desxr_rioc") 
 	end
 
-	-- local function postpone_for_next_frame(x)
-    --     dbg_print("x = %s", x)
-    --     local min, max = utils.ym_get_rioc_reward(task_id)
-
-    --     local news_caption = utils.ym_get_reward_caption()
-	-- 	local news_icon = utils.ym_get_reward_icon()
-	-- 	local news_text = utils.format_reward_string(min, max)
-
-
-    --     if  utils.is_pda_taskboard_active then 
-    --         -- cache_task_text( news_caption, news_text)
-    --         return true
-    --     end
-
-        
-	-- 	db.actor:give_talk_message2(news_caption, news_text, news_icon, "iconed_answer_item")
-	-- 	return true
-	-- end
-
     local function postpone(x)
 
         if (utils.is_pda_taskboard_active()) or (not utils.is_supported_task(task_id)) then
@@ -354,13 +278,6 @@ end
 --// ! BUG: reward estimate is off by some varying factor, most likely the distance (sweets) factor
 --* Reward estimate was off because of the random number generator. We had to switch to outputting a min and max instead
 -- #region DELIVERY tasks
--- local function get_target_id(task_id)
--- 	local var = load_var(db.actor, task_id)
--- 	if var and var.target_id then
--- 		return var.target_id
--- 	end
--- end
-
 local original_on_init_delivery_task = xr_effects.on_init_delivery_task
 function xr_effects.on_init_delivery_task(actor,npc,p)
     newline()
@@ -373,7 +290,6 @@ function xr_effects.on_init_delivery_task(actor,npc,p)
 
 	if not utils.is_pda_taskboard_active() then
 		-- Removes default time event, which prevents printing of default quest info
-		-- RemoveTimeEvent(0,"on_init_delivery_task") 
 		RemoveTimeEvent(2,"on_init_delivery_task") 
 	end
 
@@ -399,36 +315,9 @@ function xr_effects.setup_measure_task(actor, npc, p)
 
 	if not utils.is_pda_taskboard_active() then
 		-- Removes default time event, which prevents printing of default quest info
-		-- RemoveTimeEvent(0,"on_init_delivery_task") 
 		RemoveTimeEvent(2,"setup_measure_task") 
 	end
 
-    -- local function postpone(task_id)
-    --     if (utils.is_pda_taskboard_active()) or (not utils.is_supported_task(task_id)) then
-    --         -- dbg_print("Not a supported task")
-    --         return true
-    --     end
-
-    --     local min,max = utils.calc_reward_money(task_id)
-
-    --     local news_caption = utils.ym_get_reward_caption()
-    --     local news_text = utils.format_reward_string(min, max)
-    --     local news_icon = utils.ym_get_reward_icon()
-    --     db.actor:give_talk_message2(news_caption, news_text, news_icon, "iconed_answer_item")
-
-    --     return true
-    -- end
-
-	-- local level_target = alife():level_name(game_graph():vertex(se_target.m_game_vertex_id):level_id())
-    -- local function postpone(task_id, level_target)
-    --     if (utils.is_pda_taskboard_active()) or (not utils.is_supported_task(task_id)) then
-    --         -- cache_task_text(task_id, news_caption, news_text)
-    --         org_postpone(task_id, level_target)
-    --         return true
-    --     end
-        
-    --     return utils.generic_postpone(task_id)
-    -- end
 	CreateTimeEvent(2,"setup_measure_task",0,utils.generic_postpone,task_id)
 end
 --#endregion
@@ -476,7 +365,6 @@ if ui_pda_taskboard_tab then
         end
 
         if result then
-            -- local reward_s = utils.combined_caption_and_reward(min_cost, max_cost, task_id) or ""
             local cap = utils.ym_get_reward_caption()
             local news_text = utils.ym_get_reward_text()
             local tbl_keys  = utils.get_generic_tbl_keys()
