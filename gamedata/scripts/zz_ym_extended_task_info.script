@@ -157,6 +157,24 @@ end
 --#endregion
 
 
+--#region FATE tasks
+local org_fate_setup = xr_effects.on_init_fate_task
+function xr_effects.on_init_fate_task(actor,npc, p)
+	if (not p) or (p and (#p < 4)) then
+		return
+	end
+	local task_id = p[1]
+    org_fate_setup(actor,npc, p)
+
+	if not utils.is_pda_taskboard_active() then
+        RemoveTimeEvent(2, "on_init_fate_task")
+    end
+
+
+	CreateTimeEvent(2,"on_init_fate_task",0,utils.generic_postpone,task_id)
+end
+
+--#endregion
 
 
 --// TODO: finish the rest of the types of dynamic tasks
