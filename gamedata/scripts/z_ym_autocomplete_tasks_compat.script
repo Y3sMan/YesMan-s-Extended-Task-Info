@@ -25,18 +25,35 @@ local parse_keys   = utils_data.parse_string_keys
 if ym_eti_utils and z_autocomplete_tasks_core then
     printf("! Monkey Patching zz_ym_extended_task_info for Autocomplete Tasks")
 
-    local org_get_fetch_reward = ym_utils.ym_get_fetch_reward
-    local add_task_func = ym_utils.ym_add_supported_task_func
-
-    local at_utils = autocomplete_tasks_utils
-    local get_base_cost = at_utils.get_base_cost
-    local get_mcm_config = autocomplete_tasks_mcm.get_config
-    local isATEnabled = get_mcm_config("at_general", "enable")
-    local isCompensate = get_mcm_config("at_general", "compensate_item_rewards")
+    --#region imports
     -- local remove_task_func = zz_ym_extended_task_info.ym_remove_supported_task_func
+    local add_task_func
+    local at_utils
+    local get_base_cost
+    local get_mcm_config
+    local isATEnabled
+    local isCompensate
+    local should_autocomplete
+    local org_get_fetch_reward
+
+
+    local function imports()
+         add_task_func = ym_utils.ym_add_supported_task_func
+         at_utils = autocomplete_tasks_utils
+         get_base_cost = at_utils.get_base_cost
+         get_mcm_config = autocomplete_tasks_mcm.get_config
+         isATEnabled = get_mcm_config("at_general", "enable")
+         isCompensate = get_mcm_config("at_general", "compensate_item_rewards")
+         should_autocomplete = z_autocomplete_tasks_core.should_autocomplete
+         org_get_fetch_reward = ym_utils.ym_get_fetch_reward
+    end
+
+    imports()
 
     function ym_reward_item_compensation(task_id)
         if not task_id then return end
+        imports()
+
 
         -- if ym_utils.cached_tasks_text[task_id] then return ym_utils.cached_tasks_text[task_id] end
 
@@ -104,7 +121,7 @@ if ym_eti_utils and z_autocomplete_tasks_core then
     end
 
     function ym_setup_reward_items_info(task_id)
-        if (not isATEnabled) or (not isCompensate) then
+        imports()
             return 0, 0 
         end
 
