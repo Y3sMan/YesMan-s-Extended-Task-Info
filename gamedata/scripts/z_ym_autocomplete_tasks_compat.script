@@ -105,6 +105,7 @@ if ym_eti_utils and z_autocomplete_tasks_core then
 
         -- if ym_utils.cached_tasks_text[task_id] then return ym_utils.cached_tasks_text[task_id] end
 
+
         -- if compenstation is not enabled in AT, then return 0,0; this will not add to the sum rewards
         if (not isATEnabled) or (not isCompensate) then
             return 0, 0 
@@ -138,38 +139,18 @@ if ym_eti_utils and z_autocomplete_tasks_core then
 
         return lowest_reward, highest_reward -- return min_reward, max_reward
     end
+    --#endregion
 
-
-    function ym_reward_item_caption()
-        return "Reward (with item compensation):"
-    end
-
-    function ym_reward_item_text_min()
-        return gc("ym_ui_reward_min") .. " (+%$min_comp)"
-    end
-
-    function ym_reward_item_text_max()
-        return gc("ym_ui_reward_max") .. " (+%$max_comp)"
-    end
-
-    function ym_reward_item_text(min_cost, max_cost,min_comp, max_comp)
-        local s = ym_reward_item_text_min() .. "\\n" .. ym_reward_item_text_max()
-        local tbl_keys = {
-            ["min"] = min_cost,
-            ["max"] = max_cost,
-            ["min_comp"] = min_comp,
-            ["max_comp"] = max_comp,
-            ["grn_text"] = grn_text,
-            ["new_line"] = "\\n",
-            ["clr_number"] = clr_txt,
-            ["clr_text"] = clr_txt,
-            ["ylw_text"] = ylw_text,
-        }
-        return parse_keys(s, tbl_keys)
-    end
-
+    -- Function to add item compensation information to reward dialog
     function ym_setup_reward_items_info(task_id)
         imports()
+        newline()
+        dbg_print("YM_SETUP_REWARD_ITEMS_INFO")
+
+
+        dbg_print("task_id, should_autocomplete = %s, %s", task_id, should_autocomplete(task_id, 0))
+        dbg_print("task_id, can_autocomplete = %s, %s", task_id, can_autocomplete(task_id))
+        dbg_print("task has reward item =%s", ym_utils.ym_does_task_have_reward_item(task_id))
 
         -- Check if this task has been worked on
         -- if not, continue
@@ -202,16 +183,17 @@ if ym_eti_utils and z_autocomplete_tasks_core then
         local s = ym_utils.ym_list_reward_items(task_id)
         dbg_print("s = %s", s)
 
+        -- get the total minimum and maximum item compensation
         local min_comp, max_comp = ym_reward_item_compensation(task_id)
-        ym_utils.ym_set_reward_caption("Reward (with item compensation):")
 
-        local tbl_keys = {
-            ["min_compensation"] = min_comp,
-            ["grn_text"] = grn_text,
-            ["max_compensation"] = max_comp,
-            ["clr_text"] = clr_txt,
-        }
+        ym_utils.ym_set_reward_caption(gc("st_ym_eti_at_caption"))
 
+        local tbl_keys = ym_utils.get_generic_tbl_keys()
+        tbl_keys["min_compensation"] = min_comp or 0
+        tbl_keys["max_compensation"] = max_comp or 0
+
+        -- Edit the dialog text
+        -- First edit the "Min" line
         local org_min  = ym_utils.ym_get_reward_text_min()
         local new_min = gc("st_ym_eti_at_min_compensation")
         org_min = org_min .. new_min
@@ -227,6 +209,8 @@ if ym_eti_utils and z_autocomplete_tasks_core then
         dbg_print("new max text = %s",s)
         ym_utils.ym_set_reward_text_max(s)
         -- save_var(db.actor, (task_id .. "_ym_reward_caption"), "Reward (with item compensation):")
+
+        -- save_var(db.actor, (task_id .. "_at_compensate"), true)
 
         return 0, 0
     end
