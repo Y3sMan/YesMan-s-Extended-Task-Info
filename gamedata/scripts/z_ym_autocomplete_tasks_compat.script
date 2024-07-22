@@ -12,18 +12,18 @@ local function newline()
 end
 
 local gc = game.translate_string
-local ym_utils = ym_eti_utils
+local ym_utils = ym_tri_utils
 local parse_keys   = utils_data.parse_string_keys
 
 
 
 
 -- TODO: To handle item compensation, the compensation would have to be summed with the other potential reward calculations
-if ym_eti_utils and z_autocomplete_tasks_core then
+if ym_tri_utils and z_autocomplete_tasks_core then
     printf("! Monkey Patching zz_ym_extended_task_info for Autocomplete Tasks")
 
     --#region imports
-    -- local remove_task_func = zz_ym_extended_task_info.ym_remove_supported_task_func
+    -- local remove_task_func = zz_task_reward_info_core.ym_remove_supported_task_func
     local add_task_func
     local at_utils
     local get_base_cost
@@ -166,14 +166,16 @@ if ym_eti_utils and z_autocomplete_tasks_core then
             return 0, 0 
         end
 
+        -- String of item rewards concatenated with commas
         local s = ym_utils.ym_list_reward_items(task_id)
         dbg_print("s = %s", s)
 
         -- get the total minimum and maximum item compensation
         local min_comp, max_comp = ym_reward_item_compensation(task_id)
 
-        ym_utils.ym_set_reward_caption(gc("st_ym_eti_at_caption"))
+        ym_utils.ym_set_reward_caption(gc("st_ym_tri_at_caption"))
 
+        -- formatting
         local tbl_keys = ym_utils.get_generic_tbl_keys()
         tbl_keys["min_compensation"] = min_comp or 0
         tbl_keys["max_compensation"] = max_comp or 0
@@ -181,7 +183,7 @@ if ym_eti_utils and z_autocomplete_tasks_core then
         -- Edit the dialog text
         -- First edit the "Min" line
         local org_min  = ym_utils.ym_get_reward_text_min()
-        local new_min = gc("st_ym_eti_at_min_compensation")
+        local new_min = gc("st_ym_tri_at_min_compensation")
         org_min = org_min .. new_min
         local s        = parse_keys(org_min, tbl_keys)
         dbg_print("new min text = %s",s)
@@ -189,7 +191,7 @@ if ym_eti_utils and z_autocomplete_tasks_core then
 
         -- Then edit the "Max" line
         local org_max = ym_utils.ym_get_reward_text_max()
-        local new_max = gc("st_ym_eti_at_max_compensation")
+        local new_max = gc("st_ym_tri_at_max_compensation")
         org_max = org_max .. new_max 
         s = parse_keys(org_max, tbl_keys)
         dbg_print("new max text = %s",s)
