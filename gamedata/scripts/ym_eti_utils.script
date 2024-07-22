@@ -2,9 +2,14 @@
 local function dbg_print(msg,...)
     if not ym_debug then return end
 
-    ym_debug.set_modname("YM_ETI_UTILS")
+    ym_debug.set_modname("YM_tri_UTILS")
     ym_debug.dbg_print(msg,...)
 		--exec_console_cmd("flush")
+end
+
+
+local newline = function()
+    printf("\n")
 end
 
 ym_cached_tasks = {}
@@ -22,9 +27,6 @@ local reward_caption =  gc("ym_ui_caption_reward")
 local reward_text_min = gc("ym_ui_reward_min")
 local reward_text_max = gc("ym_ui_reward_max")
 
-local newline = function()
-    printf("\n")
-end
 
 function table_dump(o)
    if type(o) == 'table' then
@@ -475,7 +477,7 @@ function ym_get_fetch_reward(task_id)
     dbg_print("max_reward * eco_multi = " .. max_reward * eco_multi)
 
     local min_cost = round_reward(min_reward, eco_multi)
-    max_cost = round_reward(max_reward, eco_multi)
+    local max_cost = round_reward(max_reward, eco_multi)
     dbg_print("final min cost calc = " .. min_cost)
 
     return min_cost, max_cost
@@ -549,6 +551,11 @@ function get_generic_tbl_keys()
 end
 
     --#region caption getters
+    --[[
+        The caption is usually as such:
+        "Reward:"
+        then the actual info
+    --]]
 function ym_generic_reward_caption()
     return gc("ym_ui_caption_reward")
 end
@@ -568,6 +575,7 @@ function ym_reset_reward_caption()
 end
     --#endregion
 
+    --TODO: Implement min and max caption functions. Separate "Min" and "Max" from the actual numberical information
     --#region text min getters
 function ym_generic_reward_text_min()
     return gc("ym_ui_reward_min")
@@ -673,9 +681,8 @@ function ym_list_reward_items(task_id)
     end
     return s
 end
-
--- Adds a message with potential item rewards
-function ym_msg_reward_items_setup(task_id)
+-- Setup Item rewards info
+function ym_reward_items_setup(task_id)
     newline()
     dbg_print("YM_MSG_REWARD_ITEMS_SETUP")
 
@@ -683,6 +690,20 @@ function ym_msg_reward_items_setup(task_id)
     local news_caption = "Potential Item Rewards:"
     local news_text = s
     local news_icon = ym_get_reward_icon()
+
+    return news_caption, news_text, news_icon
+end
+
+-- Adds a message with potential item rewards
+function ym_reward_items_msg(task_id)
+    local news_caption, news_text, news_icon = ym_reward_items_setup(task_id)
+
+    if (is_pda_taskboard_active()) or (not is_supported_task(task_id)) then
+        -- cache_task_text(task_id, news_caption, news_text)
+        -- dbg_print("reward text = %s, type of reward_text = %s", tostring( news_text ), tostring(type(news_text)))
+        ym_addendum_tasks_text[task_id] = concat_caption_with_text(news_caption, news_text)
+        return 0, 0
+    end
     
     db.actor:give_talk_message2(news_caption, news_text, news_icon, "iconed_answer_item")
     
@@ -710,8 +731,8 @@ local supported_tasks_funcs = {
     [ "reward_random_money_by_dist" ] = ym_get_random_money_by_dist_rewards ,
     [ "reward_money," ] =  ym_get_static_money_reward, 
     [ "tasks_recover_item_on_corpse,[2] = reward,"] = ym_get_rioc_reward, 
-    [ "reward_item,"] = ym_msg_reward_items_setup,
-    [ "reward_random_item,"] = ym_msg_reward_items_setup,
+    [ "reward_item,"] = ym_reward_items_msg,
+    [ "reward_random_item,"] = ym_reward_items_msg,
 }
 
 
@@ -778,29 +799,7 @@ end
 
 -- Add a reward calculation function to each task's on_complete reward function
 -- can also be used to REPLACE pre-defined functions (i.e. replace "fetch_reward_and_remove," with a monkey patch)
--- EXAMPLE
--- Change fetch rewards by some factor
---[[==
-        printf("! Monkey Patching zz_ym_extended_task_info")
-
-        local org_get_fetch_reward = ym_extended_task_info.ym_get_fetch_reward
-        local add_task_func = ym_extended_task_info.ym_add_supported_task_func
-        local remove_task_func = ym_extended_task_info.ym_remove_supported_task_func
-
-        ym_extended_task_info.ym_get_fetch_reward = function(task_id)
-            printf("!Monkey Patch of ym_get_fetch_reward")
-            local org_min, org_max = org_get_fetch_reward(task_id)
-            local factor = 10.0
-            local min, max = 0, 0
-            min = org_min * factor
-            max  =org_max * factor
-
-            printf("! min = %s, max = %s",min, max)
-            return min, max
-        end
-
-        add_task_func("fetch_reward_and_remove,", ym_extended_task_info.ym_get_fetch_reward)
--- ==]]
+-- See readme for examples
 
 function ym_add_supported_task_func(func_name, func)
     supported_tasks_funcs[func_name] = func
@@ -857,6 +856,8 @@ function calc_reward_money(task_id)
     return lowest_reward, highest_reward
 end
 
+-- Main postpone_for_next_frame used for most task functions
+-- Where the core of the functionality is called
 function generic_postpone(task_id)
     if not task_id then return end
     newline()
@@ -885,13 +886,14 @@ function generic_postpone(task_id)
 
     local news_icon = reward_icon
 
-    if is_pda_taskboard_active() then
-		-- cache_task_text(task_id, news_caption, news_text)
+    if (is_pda_taskboard_active()) or (not is_supported_task(task_id)) then
+		cache_task_text(task_id, news_caption, news_text)
         return true
     end
 
 
     db.actor:give_talk_message2(news_caption, news_text, news_icon, "iconed_answer_item")
+
 
     ym_reset_reward_cap_and_text()
     return true
