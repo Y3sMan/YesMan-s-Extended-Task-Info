@@ -649,13 +649,21 @@ function ym_list_reward_items(task_id)
     if not tbl then return "" end
 
     local s = ""
+    local last_v 
     for k,v in pairs(tbl) do
         dbg_print("k, v, name = %s, %s, %s", k,v, get_sec_name(v))        
+        -- Filter out duplicate entries
+        if (not last_v  or not v or last_v == v) then goto continue end
+
         if s ~= "" then 
             s = s .. ", " .. tostring(get_sec_name(v))
         else
             s = tostring(get_sec_name(v))
         end
+
+
+        :: continue ::
+        last_v = v
     end
     return s
 end
