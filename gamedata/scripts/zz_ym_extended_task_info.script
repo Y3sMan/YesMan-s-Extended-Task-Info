@@ -333,7 +333,7 @@ if ui_pda_taskboard_tab then
 
         local task_id = task_data.task_id
         if not task_id then return org_get_fetch_task_descr(task_data) end
-        if utils.ym_cached_tasks_text[task_id] then return utils.ym_cached_tasks_text[task_id] end
+        -- if utils.ym_cached_tasks_text[task_id] then return utils.ym_cached_tasks_text[task_id] end
 
         if not utils.is_supported_task(task_id) then return org_get_fetch_task_descr(task_data) end
 
@@ -373,7 +373,11 @@ if ui_pda_taskboard_tab then
 
             news_text = parse_keys(news_text, tbl_keys)
 
-            local final_s = utils.concatenate_with_newline(result, cap, news_text)
+
+            local final_s = utils.concatenate_with_newline("\\n", result, cap, news_text)
+            local cached_text = utils.ym_addendum_tasks_text[task_id] 
+            dbg_print("cached_text = %s", cached_text)
+            final_s = utils.concatenate_with_newline(final_s, cached_text)
 
             utils.cache_task_text(task_id, "", final_s)
             return  final_s
@@ -383,6 +387,18 @@ if ui_pda_taskboard_tab then
     end
 end
 
+
+-- CLEAR Cache according to PDA Taskboard Refresh button
+if ui_pda_taskboard_tab and ui_pda_taskboard_tab.clear_cached_data then
+	local original_clear_cached_data = ui_pda_taskboard_tab.clear_cached_data
+	
+	-- Clear cache table on taskboard clear
+	function ui_pda_taskboard_tab.clear_cached_data()
+		original_clear_cached_data()
+		utils.ym_cached_tasks_text = {}
+		utils.ym_addendum_tasks_text = {}
+	end
+end
 
 --#endregion
 

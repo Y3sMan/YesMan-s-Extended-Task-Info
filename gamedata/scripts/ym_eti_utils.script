@@ -494,6 +494,10 @@ end
 
 
 ym_cached_tasks_text = {}
+-- Addendum to hold concated news_caption and news_text to later add to the end of PDA Taskboard 
+-- long description
+ym_addendum_tasks_text = {}
+
 if z_extended_task_info then
     ym_cached_tasks_text = z_extended_task_info.cached_tasks_text
 end
@@ -501,8 +505,10 @@ end
 function cache_task_text(task_id, news_caption, news_text)
     if news_caption ~= "" then
         ym_cached_tasks_text[task_id] = concat_caption_with_text(news_caption, news_text)
+        -- ym_addendum_tasks_text[task_id] = concat_caption_with_text(news_caption, news_text)
     else
         ym_cached_tasks_text[task_id] = news_text
+        -- ym_addendum_tasks_text[task_id] = news_text
     end
 end
 
